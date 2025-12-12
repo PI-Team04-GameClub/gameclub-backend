@@ -3,10 +3,19 @@ package routes
 import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/handlers"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
-func Setup(app *fiber.App) {
+func Setup(app *fiber.App, db *gorm.DB) {
 	api := app.Group("/api")
+
+	// Auth routes (public)
+	authHandler := handlers.NewAuthHandler(db)
+	api.Post("/auth/register", authHandler.Register)
+	api.Post("/auth/login", authHandler.Login)
+
+	// Protected routes
+	api.Get("/auth/me", handlers.JWTMiddleware(db), authHandler.GetCurrentUser)
 
 	api.Get("/games", handlers.GetAllGames)
 	api.Get("/games/:id", handlers.GetGameByID)

@@ -32,11 +32,11 @@ func main() {
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowMethods: "GET, POST, PUT, DELETE",
 	}))
 
-	routes.Setup(app)
+	routes.Setup(app, db.DB)
 
 	log.Fatal(app.Listen(":3000"))
 }
