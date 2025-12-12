@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: gameclub_db
+    environment:
+      POSTGRES_DB: gameclub
+      POSTGRES_USER: Josip
+      POSTGRES_PASSWORD: Pa55w.rd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/18/main
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U Josip -d gameclub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
