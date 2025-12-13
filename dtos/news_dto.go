@@ -3,6 +3,7 @@ package dtos
 type CreateNewsRequest struct {
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description" validate:"required"`
+	AuthorId    uint   `json:"authorId" validate:"required"`
 }
 
 type NewsResponse struct {

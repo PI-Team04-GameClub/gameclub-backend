@@ -30,23 +30,20 @@ func CreateNews(c *fiber.Ctx) error {
 		})
 	}
 
-	// For simplicity, currently using first user as author or create a default author if it doesn't exist
-	var author models.User
-	if err := db.DB.First(&author).Error; err != nil {
-		// Create a default author if none exists
-		author = models.User{
-			FirstName: "Milica",
-			LastName:  "Krmpotich",
-			Email:     "m.krmpotic@gameclub.com",
-		}
-		if err := db.DB.Create(&author).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to create author",
-			})
-		}
+	if req.AuthorId == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Author ID is required",
+		})
 	}
 
-	news := mappers.ToNewsModel(req, author.ID)
+	var author models.User
+	if err := db.DB.First(&author, req.AuthorId).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid author ID",
+		})
+	}
+
+	news := mappers.ToNewsModel(req, req.AuthorId)
 	if err := db.DB.Create(&news).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create news",
