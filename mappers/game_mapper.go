@@ -11,15 +11,63 @@ func ToGameResponse(game *models.Game) dtos.GameResponse {
 		Name:            game.Name,
 		Description:     game.Description,
 		NumberOfPlayers: game.NumberOfPlayers,
+		MinPlayers:      game.MinPlayers,
+		MaxPlayers:      game.MaxPlayers,
+		PlaytimeMinutes: game.PlaytimeMinutes,
+		MinAge:          game.MinAge,
+		Complexity:      string(game.Complexity),
+		Category:        string(game.Category),
+		Publisher:       game.Publisher,
+		YearPublished:   game.YearPublished,
+		Rating:          game.Rating,
 	}
 }
 
+// ToGameModel uses the Builder pattern to create a Game instance
 func ToGameModel(req dtos.CreateGameRequest) models.Game {
-	return models.Game{
-		Name:            req.Name,
-		Description:     req.Description,
-		NumberOfPlayers: req.NumberOfPlayers,
+	builder := models.NewGameBuilder().
+		SetName(req.Name).
+		SetDescription(req.Description)
+
+	// Handle player count - use specific fields if provided, otherwise use NumberOfPlayers
+	if req.MinPlayers > 0 && req.MaxPlayers > 0 {
+		builder.SetPlayerRange(req.MinPlayers, req.MaxPlayers)
+	} else if req.NumberOfPlayers > 0 {
+		builder.SetNumberOfPlayers(req.NumberOfPlayers).
+			SetMinPlayers(2).
+			SetMaxPlayers(req.NumberOfPlayers)
 	}
+
+	// Set optional fields if provided
+	if req.PlaytimeMinutes > 0 {
+		builder.SetPlaytimeMinutes(req.PlaytimeMinutes)
+	}
+
+	if req.MinAge > 0 {
+		builder.SetMinAge(req.MinAge)
+	}
+
+	if req.Complexity != "" {
+		builder.SetComplexity(models.GameComplexity(req.Complexity))
+	}
+
+	if req.Category != "" {
+		builder.SetCategory(models.GameCategory(req.Category))
+	}
+
+	if req.Publisher != "" {
+		builder.SetPublisher(req.Publisher)
+	}
+
+	if req.YearPublished > 0 {
+		builder.SetYearPublished(req.YearPublished)
+	}
+
+	if req.Rating > 0 {
+		builder.SetRating(req.Rating)
+	}
+
+	return *builder.Build()
 }
 
 func ToGameResponseList(games []models.Game) []dtos.GameResponse {
@@ -28,4 +76,53 @@ func ToGameResponseList(games []models.Game) []dtos.GameResponse {
 		responses[i] = ToGameResponse(&game)
 	}
 	return responses
+}
+
+// UpdateGameFromRequest updates an existing game using the Builder pattern
+func UpdateGameFromRequest(existingGame *models.Game, req dtos.CreateGameRequest) *models.Game {
+	builder := models.NewGameBuilder().
+		SetID(existingGame.ID).
+		SetModel(existingGame.Model).
+		SetName(req.Name).
+		SetDescription(req.Description)
+
+	// Handle player count
+	if req.MinPlayers > 0 && req.MaxPlayers > 0 {
+		builder.SetPlayerRange(req.MinPlayers, req.MaxPlayers)
+	} else if req.NumberOfPlayers > 0 {
+		builder.SetNumberOfPlayers(req.NumberOfPlayers).
+			SetMinPlayers(2).
+			SetMaxPlayers(req.NumberOfPlayers)
+	}
+
+	// Set optional fields
+	if req.PlaytimeMinutes > 0 {
+		builder.SetPlaytimeMinutes(req.PlaytimeMinutes)
+	}
+
+	if req.MinAge > 0 {
+		builder.SetMinAge(req.MinAge)
+	}
+
+	if req.Complexity != "" {
+		builder.SetComplexity(models.GameComplexity(req.Complexity))
+	}
+
+	if req.Category != "" {
+		builder.SetCategory(models.GameCategory(req.Category))
+	}
+
+	if req.Publisher != "" {
+		builder.SetPublisher(req.Publisher)
+	}
+
+	if req.YearPublished > 0 {
+		builder.SetYearPublished(req.YearPublished)
+	}
+
+	if req.Rating > 0 {
+		builder.SetRating(req.Rating)
+	}
+
+	return builder.Build()
 }

@@ -42,6 +42,7 @@ func CreateGame(c *fiber.Ctx) error {
 		})
 	}
 
+	// Use Builder pattern through mapper
 	game := mappers.ToGameModel(req)
 
 	if err := db.DB.Create(&game).Error; err != nil {
@@ -70,17 +71,16 @@ func UpdateGame(c *fiber.Ctx) error {
 		})
 	}
 
-	game.Name = req.Name
-	game.Description = req.Description
-	game.NumberOfPlayers = req.NumberOfPlayers
+	// Use Builder pattern through mapper to update the game
+	updatedGame := mappers.UpdateGameFromRequest(&game, req)
 
-	if err := db.DB.Save(&game).Error; err != nil {
+	if err := db.DB.Save(updatedGame).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update game",
 		})
 	}
 
-	return c.JSON(mappers.ToGameResponse(&game))
+	return c.JSON(mappers.ToGameResponse(updatedGame))
 }
 
 func DeleteGame(c *fiber.Ctx) error {
