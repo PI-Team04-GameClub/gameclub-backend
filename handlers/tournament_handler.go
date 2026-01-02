@@ -7,6 +7,7 @@ import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
+	"github.com/PI-Team04-GameClub/gameclub-backend/observer"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -68,6 +69,23 @@ func CreateTournament(c *fiber.Ctx) error {
 
 	// Preload Game to get the game name for response
 	db.DB.Preload("Game").First(&tournament, tournament.ID)
+
+	// Observer Pattern: Fetch users from DB and attach observers
+	var users []models.User
+	db.DB.Find(&users)
+
+	// Create map of user emails to names
+	userEmails := make(map[string]string)
+	for _, user := range users {
+		userEmails[user.Email] = user.FirstName
+	}
+
+	// Attach observers with user data
+	tournament.Attach(observer.NewEmailNotifier(userEmails))
+	tournament.Attach(observer.NewLogNotifier())
+
+	// Notify all observers
+	tournament.NotifyCreated()
 
 	response := mappers.ToTournamentResponse(&tournament)
 	return c.Status(fiber.StatusCreated).JSON(response)

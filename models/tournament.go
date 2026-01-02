@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/PI-Team04-GameClub/gameclub-backend/observer"
 	"github.com/PI-Team04-GameClub/gameclub-backend/strategy"
 	"gorm.io/gorm"
 )
@@ -27,6 +28,9 @@ type Tournament struct {
 
 	Game  Game    `gorm:"foreignKey:GameID"`
 	Teams []*Team `gorm:"many2many:team_tournaments;"`
+
+	// Observer pattern: list of observers (not persisted to database)
+	observers []observer.TournamentObserver `gorm:"-"`
 }
 
 // ApplyPrizePoolStrategy calculates and sets the prize pool based on start date
@@ -46,4 +50,32 @@ func (t *Tournament) GetPrizePoolBonus() float64 {
 		return 1.0
 	}
 	return t.CalculatedPrizePool / t.BasePrizePool
+}
+
+// Attach adds an observer to the tournament's notification list
+func (t *Tournament) Attach(obs observer.TournamentObserver) {
+	t.observers = append(t.observers, obs)
+}
+
+// Detach removes an observer from the tournament's notification list
+func (t *Tournament) Detach(obs observer.TournamentObserver) {
+	for i, o := range t.observers {
+		if o == obs {
+			t.observers = append(t.observers[:i], t.observers[i+1:]...)
+			return
+		}
+	}
+}
+
+// NotifyCreated notifies all observers that the tournament was created
+func (t *Tournament) NotifyCreated() {
+	tournamentData := observer.TournamentData{
+		Name:      t.Name,
+		StartDate: t.StartDate.Format("2006-01-02 15:04"),
+		PrizePool: t.CalculatedPrizePool,
+	}
+
+	for _, obs := range t.observers {
+		obs.OnTournamentCreated(tournamentData)
+	}
 }
