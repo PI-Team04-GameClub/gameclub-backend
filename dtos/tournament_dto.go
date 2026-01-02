@@ -10,10 +10,14 @@ type CreateTournamentRequest struct {
 }
 
 type TournamentResponse struct {
-	ID        uint      `json:"id"`
-	Name      string    `json:"name"`
-	Game      string    `json:"game"`
-	PrizePool float64   `json:"prizePool" binding:"min=0"`
-	StartDate time.Time `json:"startDate"`
-	Status    string    `json:"status"`
+	ID                  uint      `json:"id"`
+	Name                string    `json:"name"`
+	Game                string    `json:"game"`
+	BasePrizePool       float64   `json:"basePrizePool"`
+	CalculatedPrizePool float64   `json:"calculatedPrizePool"`
+	PrizePool           float64   `json:"prizePool"`
+	BonusType           string    `json:"bonusType"`       // "Normal", "Summer Bonus (20%)", etc.
+	BonusMultiplier     float64   `json:"bonusMultiplier"` // 1.0, 1.2, or 2.2
+	StartDate           time.Time `json:"startDate"`
+	Status              string    `json:"status"`
 }

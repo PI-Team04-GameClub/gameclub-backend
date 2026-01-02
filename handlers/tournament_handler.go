@@ -49,7 +49,17 @@ func CreateTournament(c *fiber.Ctx) error {
 		})
 	}
 
+	// Validate that game exists
+	var game models.Game
+	if err := db.DB.First(&game, req.GameId).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Game not found",
+		})
+	}
+
+	// Create tournament using mapper (which applies Strategy pattern)
 	tournament := mappers.ToTournamentModel(req)
+
 	if err := db.DB.Create(&tournament).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create tournament",
@@ -85,21 +95,27 @@ func UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament.Name = req.Name
-	tournament.GameID = req.GameId
-	tournament.PrizePool = req.PrizePool
-	tournament.StartDate = req.StartDate
+	// Validate that game exists
+	var game models.Game
+	if err := db.DB.First(&game, req.GameId).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Game not found",
+		})
+	}
 
-	if err := db.DB.Save(&tournament).Error; err != nil {
+	// Update tournament using mapper (which recalculates prize pool if needed)
+	updatedTournament := mappers.UpdateTournamentFromRequest(&tournament, req)
+
+	if err := db.DB.Save(updatedTournament).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update tournament",
 		})
 	}
 
 	// Preload Game to get the game name for response
-	db.DB.Preload("Game").First(&tournament, tournament.ID)
+	db.DB.Preload("Game").First(updatedTournament, updatedTournament.ID)
 
-	response := mappers.ToTournamentResponse(&tournament)
+	response := mappers.ToTournamentResponse(updatedTournament)
 	return c.JSON(response)
 }
 
