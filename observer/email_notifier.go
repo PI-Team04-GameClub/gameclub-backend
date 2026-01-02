@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-//EmailNotifier sends email notifications to users
+// EmailNotifier sends email notifications to users
 type EmailNotifier struct {
 	userEmails map[string]string // map[email]name
 }
