@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
@@ -36,8 +37,8 @@ func JWTMiddleware(db *gorm.DB) fiber.Handler {
 			})
 		}
 
-		var user models.User
-		if err := db.First(&user, uint(userID)).Error; err != nil {
+		user, err := gorm.G[models.User](db).Where("id = ?", uint(userID)).First(context.Background())
+		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "User not found",
 			})
