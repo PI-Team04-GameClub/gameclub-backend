@@ -6,12 +6,12 @@ import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 func GetAllTeams(c *fiber.Ctx) error {
-	var teams []models.Team
-
-	if err := db.DB.Find(&teams).Error; err != nil {
+	teams, err := gorm.G[models.Team](db.DB).Find(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch teams",
 		})
@@ -23,8 +23,8 @@ func GetAllTeams(c *fiber.Ctx) error {
 func GetTeamByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var team models.Team
-	if err := db.DB.First(&team, id).Error; err != nil {
+	team, err := gorm.G[models.Team](db.DB).Where("id = ?", id).First(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
@@ -44,7 +44,7 @@ func CreateTeam(c *fiber.Ctx) error {
 
 	team := mappers.ToTeamModel(req)
 
-	if err := db.DB.Create(&team).Error; err != nil {
+	if err := gorm.G[models.Team](db.DB).Create(c.Context(), &team); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create team",
 		})
@@ -56,8 +56,8 @@ func CreateTeam(c *fiber.Ctx) error {
 func UpdateTeam(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var team models.Team
-	if err := db.DB.First(&team, id).Error; err != nil {
+	team, err := gorm.G[models.Team](db.DB).Where("id = ?", id).First(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
@@ -72,7 +72,7 @@ func UpdateTeam(c *fiber.Ctx) error {
 
 	team.Name = req.Name
 
-	if err := db.DB.Save(&team).Error; err != nil {
+	if _, err := gorm.G[models.Team](db.DB).Where("id = ?", team.ID).Updates(c.Context(), team); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update team",
 		})
@@ -84,14 +84,14 @@ func UpdateTeam(c *fiber.Ctx) error {
 func DeleteTeam(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var team models.Team
-	if err := db.DB.First(&team, id).Error; err != nil {
+	team, err := gorm.G[models.Team](db.DB).Where("id = ?", id).First(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
 	}
 
-	if err := db.DB.Delete(&team).Error; err != nil {
+	if _, err := gorm.G[models.Team](db.DB).Where("id = ?", team.ID).Delete(c.Context()); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete team",
 		})

@@ -29,6 +29,8 @@ func verifyPassword(hashedPassword, password string) bool {
 }
 
 func (ah *AuthHandler) Register(c *fiber.Ctx) error {
+	ctx := c.Context()
+
 	var req dtos.RegisterRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -49,8 +51,8 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	var existingUser models.User
-	if err := ah.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+	_, err := gorm.G[models.User](ah.db).Where("email = ?", req.Email).First(ctx)
+	if err == nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"error": "Email already registered",
 		})
@@ -67,7 +69,7 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		Password:  hashPassword(req.Password),
 	}
 
-	if err := ah.db.Create(&user).Error; err != nil {
+	if err := gorm.G[models.User](ah.db).Create(ctx, &user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create user",
 		})
@@ -90,6 +92,8 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 }
 
 func (ah *AuthHandler) Login(c *fiber.Ctx) error {
+	ctx := c.Context()
+
 	var req dtos.LoginRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -104,8 +108,8 @@ func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	var user models.User
-	if err := ah.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	user, err := gorm.G[models.User](ah.db).Where("email = ?", req.Email).First(ctx)
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Korisnik s tom email adresom nije pronađen",
