@@ -23,13 +23,11 @@ func ToGameResponse(game *models.Game) dtos.GameResponse {
 	}
 }
 
-// ToGameModel uses the Builder pattern to create a Game instance
 func ToGameModel(req dtos.CreateGameRequest) models.Game {
 	builder := models.NewGameBuilder().
 		SetName(req.Name).
 		SetDescription(req.Description)
 
-	// Handle player count - use specific fields if provided, otherwise use NumberOfPlayers
 	if req.MinPlayers > 0 && req.MaxPlayers > 0 {
 		builder.SetPlayerRange(req.MinPlayers, req.MaxPlayers)
 	} else if req.NumberOfPlayers > 0 {
@@ -38,7 +36,6 @@ func ToGameModel(req dtos.CreateGameRequest) models.Game {
 			SetMaxPlayers(req.NumberOfPlayers)
 	}
 
-	// Set optional fields if provided
 	if req.PlaytimeMinutes > 0 {
 		builder.SetPlaytimeMinutes(req.PlaytimeMinutes)
 	}
@@ -78,7 +75,6 @@ func ToGameResponseList(games []models.Game) []dtos.GameResponse {
 	return responses
 }
 
-// UpdateGameFromRequest updates an existing game using the Builder pattern
 func UpdateGameFromRequest(existingGame *models.Game, req dtos.CreateGameRequest) *models.Game {
 	builder := models.NewGameBuilder().
 		SetID(existingGame.ID).
@@ -86,7 +82,6 @@ func UpdateGameFromRequest(existingGame *models.Game, req dtos.CreateGameRequest
 		SetName(req.Name).
 		SetDescription(req.Description)
 
-	// Handle player count
 	if req.MinPlayers > 0 && req.MaxPlayers > 0 {
 		builder.SetPlayerRange(req.MinPlayers, req.MaxPlayers)
 	} else if req.NumberOfPlayers > 0 {
@@ -95,7 +90,6 @@ func UpdateGameFromRequest(existingGame *models.Game, req dtos.CreateGameRequest
 			SetMaxPlayers(req.NumberOfPlayers)
 	}
 
-	// Set optional fields
 	if req.PlaytimeMinutes > 0 {
 		builder.SetPlaytimeMinutes(req.PlaytimeMinutes)
 	}

@@ -3,16 +3,13 @@ package handlers
 import (
 	"crypto/sha256"
 	"fmt"
-	"time"
 
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
+	"github.com/PI-Team04-GameClub/gameclub-backend/security"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
-
-var jwtSecret = []byte("your-secret-key-change-this-in-production")
 
 type AuthHandler struct {
 	db *gorm.DB
@@ -31,20 +28,6 @@ func verifyPassword(hashedPassword, password string) bool {
 	return hashPassword(password) == hashedPassword
 }
 
-func generateToken(user *models.User) (string, error) {
-	claims := jwt.MapClaims{
-		"id":         user.ID,
-		"email":      user.Email,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
-		"exp":        time.Now().Add(time.Hour * 72).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
-}
-
-// Register - POST /api/auth/register
 func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 	var req dtos.RegisterRequest
 
@@ -54,7 +37,6 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate input
 	if req.Email == "" || req.Password == "" || req.FirstName == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Email, password, and first name are required",
@@ -67,7 +49,6 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if user already exists
 	var existingUser models.User
 	if err := ah.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -79,7 +60,6 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// Create new user
 	user := models.User{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
@@ -93,8 +73,7 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// Generate token
-	token, err := generateToken(&user)
+	token, err := security.GenerateToken(user.ID, user.Email, user.FirstName, user.LastName)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate token",
@@ -110,7 +89,6 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 	})
 }
 
-// Login - POST /api/auth/login
 func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 	var req dtos.LoginRequest
 
@@ -120,14 +98,12 @@ func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate input
 	if req.Email == "" || req.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Email and password are required",
 		})
 	}
 
-	// Find user
 	var user models.User
 	if err := ah.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -140,15 +116,13 @@ func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// Verify password
 	if !verifyPassword(user.Password, req.Password) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Lozinka je pogrešna",
 		})
 	}
 
-	// Generate token
-	token, err := generateToken(&user)
+	token, err := security.GenerateToken(user.ID, user.Email, user.FirstName, user.LastName)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate token",
@@ -164,7 +138,6 @@ func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
-// GetCurrentUser - GET /api/auth/me (protected route)
 func (ah *AuthHandler) GetCurrentUser(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 

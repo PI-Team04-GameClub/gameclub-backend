@@ -50,7 +50,6 @@ func CreateNews(c *fiber.Ctx) error {
 		})
 	}
 
-	// Reload with author
 	db.DB.Preload("Author").First(&news, news.ID)
 
 	response := mappers.ToNewsResponse(&news, news.Author.FirstName)
@@ -79,7 +78,6 @@ func UpdateNews(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update fields
 	news.Title = req.Title
 	news.Description = req.Description
 

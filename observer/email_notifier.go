@@ -5,19 +5,16 @@ import (
 	"log"
 )
 
-// EmailNotifier sends email notifications to users
 type EmailNotifier struct {
-	userEmails map[string]string // map[email]name
+	userEmails map[string]string
 }
 
-// NewEmailNotifier creates a new email notifier with user data
 func NewEmailNotifier(userEmails map[string]string) *EmailNotifier {
 	return &EmailNotifier{
 		userEmails: userEmails,
 	}
 }
 
-// OnTournamentCreated sends email notification to all users
 func (e *EmailNotifier) OnTournamentCreated(tournament TournamentData) {
 	for email, name := range e.userEmails {
 		e.sendEmail(
@@ -30,7 +27,6 @@ func (e *EmailNotifier) OnTournamentCreated(tournament TournamentData) {
 	log.Printf("Sent tournament creation emails to %d users", len(e.userEmails))
 }
 
-// sendEmail simulates sending an email
 func (e *EmailNotifier) sendEmail(to, subject, body string) {
 	log.Printf("Sending email to: %s", to)
 	log.Printf("Subject: %s", subject)
@@ -38,7 +34,6 @@ func (e *EmailNotifier) sendEmail(to, subject, body string) {
 	log.Println("Email sent successfully")
 }
 
-// formatEmail creates the email body
 func (e *EmailNotifier) formatEmail(userName string, tournament TournamentData) string {
 	return fmt.Sprintf(`
 Hi %s,
