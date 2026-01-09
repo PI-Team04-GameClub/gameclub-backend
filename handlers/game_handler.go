@@ -42,7 +42,6 @@ func CreateGame(c *fiber.Ctx) error {
 		})
 	}
 
-	// Use Builder pattern through mapper
 	game := mappers.ToGameModel(req)
 
 	if err := db.DB.Create(&game).Error; err != nil {
@@ -71,7 +70,6 @@ func UpdateGame(c *fiber.Ctx) error {
 		})
 	}
 
-	// Use Builder pattern through mapper to update the game
 	updatedGame := mappers.UpdateGameFromRequest(&game, req)
 
 	if err := db.DB.Save(updatedGame).Error; err != nil {

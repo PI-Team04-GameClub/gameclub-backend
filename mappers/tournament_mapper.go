@@ -34,7 +34,6 @@ func ToTournamentModel(req dtos.CreateTournamentRequest) models.Tournament {
 		Status:        models.StatusUpcoming,
 	}
 
-	// Apply the Strategy pattern to calculate prize pool based on start date
 	tournament.ApplyPrizePoolStrategy()
 
 	return tournament
@@ -48,17 +47,14 @@ func ToTournamentResponseList(tournaments []models.Tournament) []dtos.Tournament
 	return responses
 }
 
-// UpdateTournamentFromRequest updates an existing tournament and recalculates prize pool if date changed
 func UpdateTournamentFromRequest(existingTournament *models.Tournament, req dtos.CreateTournamentRequest) *models.Tournament {
 	existingTournament.Name = req.Name
 	existingTournament.GameID = req.GameId
 	existingTournament.BasePrizePool = req.PrizePool
 
-	// Check if start date changed
 	dateChanged := !existingTournament.StartDate.Equal(req.StartDate)
 	existingTournament.StartDate = req.StartDate
 
-	// Recalculate prize pool if base amount or date changed
 	if dateChanged || existingTournament.BasePrizePool != req.PrizePool {
 		existingTournament.ApplyPrizePoolStrategy()
 	}

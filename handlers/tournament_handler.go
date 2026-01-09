@@ -50,7 +50,6 @@ func CreateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate that game exists
 	var game models.Game
 	if err := db.DB.First(&game, req.GameId).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -58,7 +57,6 @@ func CreateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	// Create tournament using mapper (which applies Strategy pattern)
 	tournament := mappers.ToTournamentModel(req)
 
 	if err := db.DB.Create(&tournament).Error; err != nil {
@@ -67,24 +65,19 @@ func CreateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	// Preload Game to get the game name for response
 	db.DB.Preload("Game").First(&tournament, tournament.ID)
 
-	// Observer Pattern: Fetch users from DB and attach observers
 	var users []models.User
 	db.DB.Find(&users)
 
-	// Create map of user emails to names
 	userEmails := make(map[string]string)
 	for _, user := range users {
 		userEmails[user.Email] = user.FirstName
 	}
 
-	// Attach observers with user data
 	tournament.Attach(observer.NewEmailNotifier(userEmails))
 	tournament.Attach(observer.NewLogNotifier())
 
-	// Notify all observers
 	tournament.NotifyCreated()
 
 	response := mappers.ToTournamentResponse(&tournament)
@@ -113,7 +106,6 @@ func UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate that game exists
 	var game models.Game
 	if err := db.DB.First(&game, req.GameId).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -121,7 +113,6 @@ func UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update tournament using mapper (which recalculates prize pool if needed)
 	updatedTournament := mappers.UpdateTournamentFromRequest(&tournament, req)
 
 	if err := db.DB.Save(updatedTournament).Error; err != nil {
@@ -130,7 +121,6 @@ func UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	// Preload Game to get the game name for response
 	db.DB.Preload("Game").First(updatedTournament, updatedTournament.ID)
 
 	response := mappers.ToTournamentResponse(updatedTournament)
