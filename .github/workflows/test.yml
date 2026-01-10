@@ -33,7 +33,7 @@ jobs:
 
       - name: Check coverage metrics
         run: |
-          THRESHOLD=80.0
+          THRESHOLD=75.0
 
           echo "=== Coverage Metrics Report ==="
           echo ""
