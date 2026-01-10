@@ -17,9 +17,8 @@ func NewGameHandler(db *gorm.DB) *GameHandler {
 }
 
 func (h *GameHandler) GetAllGames(c *fiber.Ctx) error {
-	var games []models.Game
-
-	if err := h.db.Find(&games).Error; err != nil {
+	games, err := gorm.G[models.Game](h.db).Find(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch games",
 		})
@@ -31,8 +30,8 @@ func (h *GameHandler) GetAllGames(c *fiber.Ctx) error {
 func (h *GameHandler) GetGameByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var game models.Game
-	if err := h.db.First(&game, id).Error; err != nil {
+	game, err := gorm.G[models.Game](h.db).Where("id = ?", id).First(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Game not found",
 		})
@@ -52,7 +51,7 @@ func (h *GameHandler) CreateGame(c *fiber.Ctx) error {
 
 	game := mappers.ToGameModel(req)
 
-	if err := h.db.Create(&game).Error; err != nil {
+	if err := gorm.G[models.Game](h.db).Create(c.Context(), &game); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create game",
 		})
@@ -64,8 +63,8 @@ func (h *GameHandler) CreateGame(c *fiber.Ctx) error {
 func (h *GameHandler) UpdateGame(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var game models.Game
-	if err := h.db.First(&game, id).Error; err != nil {
+	game, err := gorm.G[models.Game](h.db).Where("id = ?", id).First(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Game not found",
 		})
@@ -80,7 +79,7 @@ func (h *GameHandler) UpdateGame(c *fiber.Ctx) error {
 
 	updatedGame := mappers.UpdateGameFromRequest(&game, req)
 
-	if err := h.db.Save(updatedGame).Error; err != nil {
+	if _, err := gorm.G[models.Game](h.db).Where("id = ?", game.ID).Updates(c.Context(), *updatedGame); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update game",
 		})
@@ -92,14 +91,14 @@ func (h *GameHandler) UpdateGame(c *fiber.Ctx) error {
 func (h *GameHandler) DeleteGame(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var game models.Game
-	if err := h.db.First(&game, id).Error; err != nil {
+	game, err := gorm.G[models.Game](h.db).Where("id = ?", id).First(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Game not found",
 		})
 	}
 
-	if err := h.db.Delete(&game).Error; err != nil {
+	if _, err := gorm.G[models.Game](h.db).Where("id = ?", game.ID).Delete(c.Context()); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete game",
 		})

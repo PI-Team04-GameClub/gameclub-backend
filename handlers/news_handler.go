@@ -19,8 +19,8 @@ func NewNewsHandler(db *gorm.DB) *NewsHandler {
 }
 
 func (h *NewsHandler) GetNews(c *fiber.Ctx) error {
-	var newsList []models.News
-	if err := h.db.Preload("Author").Find(&newsList).Error; err != nil {
+	newsList, err := gorm.G[models.News](h.db).Preload("Author", nil).Find(c.Context())
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch news",
 		})
@@ -31,6 +31,8 @@ func (h *NewsHandler) GetNews(c *fiber.Ctx) error {
 }
 
 func (h *NewsHandler) CreateNews(c *fiber.Ctx) error {
+	ctx := c.Context()
+
 	var req dtos.CreateNewsRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -44,27 +46,29 @@ func (h *NewsHandler) CreateNews(c *fiber.Ctx) error {
 		})
 	}
 
-	var author models.User
-	if err := h.db.First(&author, req.AuthorId).Error; err != nil {
+	_, err := gorm.G[models.User](h.db).Where("id = ?", req.AuthorId).First(ctx)
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid author ID",
 		})
 	}
 
 	news := mappers.ToNewsModel(req, req.AuthorId)
-	if err := h.db.Create(&news).Error; err != nil {
+	if err := gorm.G[models.News](h.db).Create(ctx, &news); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create news",
 		})
 	}
 
-	h.db.Preload("Author").First(&news, news.ID)
+	createdNews, _ := gorm.G[models.News](h.db).Preload("Author", nil).Where("id = ?", news.ID).First(ctx)
 
-	response := mappers.ToNewsResponse(&news, news.Author.FirstName)
+	response := mappers.ToNewsResponse(&createdNews, createdNews.Author.FirstName)
 	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
 func (h *NewsHandler) UpdateNews(c *fiber.Ctx) error {
+	ctx := c.Context()
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -72,8 +76,8 @@ func (h *NewsHandler) UpdateNews(c *fiber.Ctx) error {
 		})
 	}
 
-	var news models.News
-	if err := h.db.Preload("Author").First(&news, id).Error; err != nil {
+	news, err := gorm.G[models.News](h.db).Preload("Author", nil).Where("id = ?", id).First(ctx)
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "News not found",
 		})
@@ -89,7 +93,7 @@ func (h *NewsHandler) UpdateNews(c *fiber.Ctx) error {
 	news.Title = req.Title
 	news.Description = req.Description
 
-	if err := h.db.Save(&news).Error; err != nil {
+	if _, err := gorm.G[models.News](h.db).Where("id = ?", news.ID).Updates(ctx, news); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update news",
 		})
@@ -100,6 +104,8 @@ func (h *NewsHandler) UpdateNews(c *fiber.Ctx) error {
 }
 
 func (h *NewsHandler) DeleteNews(c *fiber.Ctx) error {
+	ctx := c.Context()
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -107,14 +113,14 @@ func (h *NewsHandler) DeleteNews(c *fiber.Ctx) error {
 		})
 	}
 
-	var news models.News
-	if err := h.db.First(&news, id).Error; err != nil {
+	news, err := gorm.G[models.News](h.db).Where("id = ?", id).First(ctx)
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "News not found",
 		})
 	}
 
-	if err := h.db.Delete(&news).Error; err != nil {
+	if _, err := gorm.G[models.News](h.db).Where("id = ?", news.ID).Delete(ctx); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete news",
 		})
