@@ -3,21 +3,25 @@ package handlers
 import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
-	"github.com/PI-Team04-GameClub/gameclub-backend/models"
+	"github.com/PI-Team04-GameClub/gameclub-backend/repositories"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
 type GameHandler struct {
-	db *gorm.DB
+	gameRepo repositories.GameRepository
 }
 
 func NewGameHandler(db *gorm.DB) *GameHandler {
-	return &GameHandler{db: db}
+	return &GameHandler{gameRepo: repositories.NewGameRepository(db)}
+}
+
+func NewGameHandlerWithRepo(gameRepo repositories.GameRepository) *GameHandler {
+	return &GameHandler{gameRepo: gameRepo}
 }
 
 func (h *GameHandler) GetAllGames(c *fiber.Ctx) error {
-	games, err := gorm.G[models.Game](h.db).Find(c.Context())
+	games, err := h.gameRepo.FindAll(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch games",
@@ -30,14 +34,14 @@ func (h *GameHandler) GetAllGames(c *fiber.Ctx) error {
 func (h *GameHandler) GetGameByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	game, err := gorm.G[models.Game](h.db).Where("id = ?", id).First(c.Context())
+	game, err := h.gameRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Game not found",
 		})
 	}
 
-	return c.JSON(mappers.ToGameResponse(&game))
+	return c.JSON(mappers.ToGameResponse(game))
 }
 
 func (h *GameHandler) CreateGame(c *fiber.Ctx) error {
@@ -51,7 +55,7 @@ func (h *GameHandler) CreateGame(c *fiber.Ctx) error {
 
 	game := mappers.ToGameModel(req)
 
-	if err := gorm.G[models.Game](h.db).Create(c.Context(), &game); err != nil {
+	if err := h.gameRepo.Create(c.Context(), &game); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create game",
 		})
@@ -63,7 +67,7 @@ func (h *GameHandler) CreateGame(c *fiber.Ctx) error {
 func (h *GameHandler) UpdateGame(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	game, err := gorm.G[models.Game](h.db).Where("id = ?", id).First(c.Context())
+	game, err := h.gameRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Game not found",
@@ -77,9 +81,9 @@ func (h *GameHandler) UpdateGame(c *fiber.Ctx) error {
 		})
 	}
 
-	updatedGame := mappers.UpdateGameFromRequest(&game, req)
+	updatedGame := mappers.UpdateGameFromRequest(game, req)
 
-	if _, err := gorm.G[models.Game](h.db).Where("id = ?", game.ID).Updates(c.Context(), *updatedGame); err != nil {
+	if err := h.gameRepo.Update(c.Context(), updatedGame); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update game",
 		})
@@ -91,14 +95,14 @@ func (h *GameHandler) UpdateGame(c *fiber.Ctx) error {
 func (h *GameHandler) DeleteGame(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	game, err := gorm.G[models.Game](h.db).Where("id = ?", id).First(c.Context())
+	game, err := h.gameRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Game not found",
 		})
 	}
 
-	if _, err := gorm.G[models.Game](h.db).Where("id = ?", game.ID).Delete(c.Context()); err != nil {
+	if err := h.gameRepo.Delete(c.Context(), game.ID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete game",
 		})

@@ -6,17 +6,22 @@ import (
 
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
+	"github.com/PI-Team04-GameClub/gameclub-backend/repositories"
 	"github.com/PI-Team04-GameClub/gameclub-backend/security"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
 type AuthHandler struct {
-	db *gorm.DB
+	userRepo repositories.UserRepository
 }
 
 func NewAuthHandler(db *gorm.DB) *AuthHandler {
-	return &AuthHandler{db: db}
+	return &AuthHandler{userRepo: repositories.NewUserRepository(db)}
+}
+
+func NewAuthHandlerWithRepo(userRepo repositories.UserRepository) *AuthHandler {
+	return &AuthHandler{userRepo: userRepo}
 }
 
 func hashPassword(password string) string {
@@ -51,7 +56,7 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err := gorm.G[models.User](ah.db).Where("email = ?", req.Email).First(ctx)
+	_, err := ah.userRepo.FindByEmail(ctx, req.Email)
 	if err == nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"error": "Email already registered",
@@ -69,7 +74,7 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 		Password:  hashPassword(req.Password),
 	}
 
-	if err := gorm.G[models.User](ah.db).Create(ctx, &user); err != nil {
+	if err := ah.userRepo.Create(ctx, &user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create user",
 		})
@@ -108,7 +113,7 @@ func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := gorm.G[models.User](ah.db).Where("email = ?", req.Email).First(ctx)
+	user, err := ah.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

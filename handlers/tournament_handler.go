@@ -1,27 +1,40 @@
 package handlers
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
-	"github.com/PI-Team04-GameClub/gameclub-backend/models"
 	"github.com/PI-Team04-GameClub/gameclub-backend/observer"
+	"github.com/PI-Team04-GameClub/gameclub-backend/repositories"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
 type TournamentHandler struct {
-	db *gorm.DB
+	tournamentRepo repositories.TournamentRepository
+	gameRepo       repositories.GameRepository
+	userRepo       repositories.UserRepository
 }
 
 func NewTournamentHandler(db *gorm.DB) *TournamentHandler {
-	return &TournamentHandler{db: db}
+	return &TournamentHandler{
+		tournamentRepo: repositories.NewTournamentRepository(db),
+		gameRepo:       repositories.NewGameRepository(db),
+		userRepo:       repositories.NewUserRepository(db),
+	}
+}
+
+func NewTournamentHandlerWithRepo(tournamentRepo repositories.TournamentRepository, gameRepo repositories.GameRepository, userRepo repositories.UserRepository) *TournamentHandler {
+	return &TournamentHandler{
+		tournamentRepo: tournamentRepo,
+		gameRepo:       gameRepo,
+		userRepo:       userRepo,
+	}
 }
 
 func (h *TournamentHandler) GetTournaments(c *fiber.Ctx) error {
-	tournaments, err := gorm.G[models.Tournament](h.db).Preload("Game", nil).Find(c.Context())
+	tournaments, err := h.tournamentRepo.FindAll(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch tournaments",
@@ -40,14 +53,14 @@ func (h *TournamentHandler) GetTournamentByID(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament, err := gorm.G[models.Tournament](h.db).Preload("Game", nil).Where("id = ?", id).First(c.Context())
+	tournament, err := h.tournamentRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
 		})
 	}
 
-	response := mappers.ToTournamentResponse(&tournament)
+	response := mappers.ToTournamentResponse(tournament)
 	return c.JSON(response)
 }
 
@@ -61,7 +74,7 @@ func (h *TournamentHandler) CreateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err := gorm.G[models.Game](h.db).Where("id = ?", req.GameId).First(ctx)
+	_, err := h.gameRepo.FindByID(ctx, strconv.Itoa(int(req.GameId)))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Game not found",
@@ -70,15 +83,15 @@ func (h *TournamentHandler) CreateTournament(c *fiber.Ctx) error {
 
 	tournament := mappers.ToTournamentModel(req)
 
-	if err := gorm.G[models.Tournament](h.db).Create(ctx, &tournament); err != nil {
+	if err := h.tournamentRepo.Create(ctx, &tournament); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create tournament",
 		})
 	}
 
-	createdTournament, _ := gorm.G[models.Tournament](h.db).Preload("Game", nil).Where("id = ?", tournament.ID).First(ctx)
+	createdTournament, _ := h.tournamentRepo.FindByID(ctx, int(tournament.ID))
 
-	users, _ := gorm.G[models.User](h.db).Find(context.Background())
+	users, _ := h.userRepo.FindAll(ctx)
 
 	userEmails := make(map[string]string)
 	for _, user := range users {
@@ -90,7 +103,7 @@ func (h *TournamentHandler) CreateTournament(c *fiber.Ctx) error {
 
 	createdTournament.NotifyCreated()
 
-	response := mappers.ToTournamentResponse(&createdTournament)
+	response := mappers.ToTournamentResponse(createdTournament)
 	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
@@ -104,7 +117,7 @@ func (h *TournamentHandler) UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament, err := gorm.G[models.Tournament](h.db).Where("id = ?", id).First(ctx)
+	tournament, err := h.tournamentRepo.FindByID(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
@@ -118,24 +131,24 @@ func (h *TournamentHandler) UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = gorm.G[models.Game](h.db).Where("id = ?", req.GameId).First(ctx)
+	_, err = h.gameRepo.FindByID(ctx, strconv.Itoa(int(req.GameId)))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Game not found",
 		})
 	}
 
-	updatedTournament := mappers.UpdateTournamentFromRequest(&tournament, req)
+	updatedTournament := mappers.UpdateTournamentFromRequest(tournament, req)
 
-	if _, err := gorm.G[models.Tournament](h.db).Where("id = ?", tournament.ID).Updates(ctx, *updatedTournament); err != nil {
+	if err := h.tournamentRepo.Update(ctx, updatedTournament); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update tournament",
 		})
 	}
 
-	result, _ := gorm.G[models.Tournament](h.db).Preload("Game", nil).Where("id = ?", updatedTournament.ID).First(ctx)
+	result, _ := h.tournamentRepo.FindByID(ctx, int(updatedTournament.ID))
 
-	response := mappers.ToTournamentResponse(&result)
+	response := mappers.ToTournamentResponse(result)
 	return c.JSON(response)
 }
 
@@ -149,14 +162,14 @@ func (h *TournamentHandler) DeleteTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament, err := gorm.G[models.Tournament](h.db).Where("id = ?", id).First(ctx)
+	_, err = h.tournamentRepo.FindByID(ctx, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
 		})
 	}
 
-	if _, err := gorm.G[models.Tournament](h.db).Where("id = ?", tournament.ID).Delete(ctx); err != nil {
+	if err := h.tournamentRepo.Delete(ctx, id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete tournament",
 		})

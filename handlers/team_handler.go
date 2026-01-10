@@ -3,21 +3,25 @@ package handlers
 import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
-	"github.com/PI-Team04-GameClub/gameclub-backend/models"
+	"github.com/PI-Team04-GameClub/gameclub-backend/repositories"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
 type TeamHandler struct {
-	db *gorm.DB
+	teamRepo repositories.TeamRepository
 }
 
 func NewTeamHandler(db *gorm.DB) *TeamHandler {
-	return &TeamHandler{db: db}
+	return &TeamHandler{teamRepo: repositories.NewTeamRepository(db)}
+}
+
+func NewTeamHandlerWithRepo(teamRepo repositories.TeamRepository) *TeamHandler {
+	return &TeamHandler{teamRepo: teamRepo}
 }
 
 func (h *TeamHandler) GetAllTeams(c *fiber.Ctx) error {
-	teams, err := gorm.G[models.Team](h.db).Find(c.Context())
+	teams, err := h.teamRepo.FindAll(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch teams",
@@ -30,14 +34,14 @@ func (h *TeamHandler) GetAllTeams(c *fiber.Ctx) error {
 func (h *TeamHandler) GetTeamByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	team, err := gorm.G[models.Team](h.db).Where("id = ?", id).First(c.Context())
+	team, err := h.teamRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
 	}
 
-	return c.JSON(mappers.ToTeamResponse(&team))
+	return c.JSON(mappers.ToTeamResponse(team))
 }
 
 func (h *TeamHandler) CreateTeam(c *fiber.Ctx) error {
@@ -51,7 +55,7 @@ func (h *TeamHandler) CreateTeam(c *fiber.Ctx) error {
 
 	team := mappers.ToTeamModel(req)
 
-	if err := gorm.G[models.Team](h.db).Create(c.Context(), &team); err != nil {
+	if err := h.teamRepo.Create(c.Context(), &team); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create team",
 		})
@@ -63,7 +67,7 @@ func (h *TeamHandler) CreateTeam(c *fiber.Ctx) error {
 func (h *TeamHandler) UpdateTeam(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	team, err := gorm.G[models.Team](h.db).Where("id = ?", id).First(c.Context())
+	team, err := h.teamRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
@@ -79,26 +83,26 @@ func (h *TeamHandler) UpdateTeam(c *fiber.Ctx) error {
 
 	team.Name = req.Name
 
-	if _, err := gorm.G[models.Team](h.db).Where("id = ?", team.ID).Updates(c.Context(), team); err != nil {
+	if err := h.teamRepo.Update(c.Context(), team); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update team",
 		})
 	}
 
-	return c.JSON(mappers.ToTeamResponse(&team))
+	return c.JSON(mappers.ToTeamResponse(team))
 }
 
 func (h *TeamHandler) DeleteTeam(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	team, err := gorm.G[models.Team](h.db).Where("id = ?", id).First(c.Context())
+	team, err := h.teamRepo.FindByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
 	}
 
-	if _, err := gorm.G[models.Team](h.db).Where("id = ?", team.ID).Delete(c.Context()); err != nil {
+	if err := h.teamRepo.Delete(c.Context(), team.ID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete team",
 		})
