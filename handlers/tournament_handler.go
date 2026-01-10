@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/PI-Team04-GameClub/gameclub-backend/db"
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
@@ -13,8 +12,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetTournaments(c *fiber.Ctx) error {
-	tournaments, err := gorm.G[models.Tournament](db.DB).Preload("Game", nil).Find(c.Context())
+type TournamentHandler struct {
+	db *gorm.DB
+}
+
+func NewTournamentHandler(db *gorm.DB) *TournamentHandler {
+	return &TournamentHandler{db: db}
+}
+
+func (h *TournamentHandler) GetTournaments(c *fiber.Ctx) error {
+	tournaments, err := gorm.G[models.Tournament](h.db).Preload("Game", nil).Find(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch tournaments",
@@ -25,7 +32,7 @@ func GetTournaments(c *fiber.Ctx) error {
 	return c.JSON(responses)
 }
 
-func GetTournamentByID(c *fiber.Ctx) error {
+func (h *TournamentHandler) GetTournamentByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -33,7 +40,7 @@ func GetTournamentByID(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament, err := gorm.G[models.Tournament](db.DB).Preload("Game", nil).Where("id = ?", id).First(c.Context())
+	tournament, err := gorm.G[models.Tournament](h.db).Preload("Game", nil).Where("id = ?", id).First(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
@@ -44,7 +51,7 @@ func GetTournamentByID(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-func CreateTournament(c *fiber.Ctx) error {
+func (h *TournamentHandler) CreateTournament(c *fiber.Ctx) error {
 	ctx := c.Context()
 
 	var req dtos.CreateTournamentRequest
@@ -54,7 +61,7 @@ func CreateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err := gorm.G[models.Game](db.DB).Where("id = ?", req.GameId).First(ctx)
+	_, err := gorm.G[models.Game](h.db).Where("id = ?", req.GameId).First(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Game not found",
@@ -63,15 +70,15 @@ func CreateTournament(c *fiber.Ctx) error {
 
 	tournament := mappers.ToTournamentModel(req)
 
-	if err := gorm.G[models.Tournament](db.DB).Create(ctx, &tournament); err != nil {
+	if err := gorm.G[models.Tournament](h.db).Create(ctx, &tournament); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create tournament",
 		})
 	}
 
-	createdTournament, _ := gorm.G[models.Tournament](db.DB).Preload("Game", nil).Where("id = ?", tournament.ID).First(ctx)
+	createdTournament, _ := gorm.G[models.Tournament](h.db).Preload("Game", nil).Where("id = ?", tournament.ID).First(ctx)
 
-	users, _ := gorm.G[models.User](db.DB).Find(context.Background())
+	users, _ := gorm.G[models.User](h.db).Find(context.Background())
 
 	userEmails := make(map[string]string)
 	for _, user := range users {
@@ -87,7 +94,7 @@ func CreateTournament(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
-func UpdateTournament(c *fiber.Ctx) error {
+func (h *TournamentHandler) UpdateTournament(c *fiber.Ctx) error {
 	ctx := c.Context()
 
 	id, err := strconv.Atoi(c.Params("id"))
@@ -97,7 +104,7 @@ func UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament, err := gorm.G[models.Tournament](db.DB).Where("id = ?", id).First(ctx)
+	tournament, err := gorm.G[models.Tournament](h.db).Where("id = ?", id).First(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
@@ -111,7 +118,7 @@ func UpdateTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = gorm.G[models.Game](db.DB).Where("id = ?", req.GameId).First(ctx)
+	_, err = gorm.G[models.Game](h.db).Where("id = ?", req.GameId).First(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Game not found",
@@ -120,19 +127,19 @@ func UpdateTournament(c *fiber.Ctx) error {
 
 	updatedTournament := mappers.UpdateTournamentFromRequest(&tournament, req)
 
-	if _, err := gorm.G[models.Tournament](db.DB).Where("id = ?", tournament.ID).Updates(ctx, *updatedTournament); err != nil {
+	if _, err := gorm.G[models.Tournament](h.db).Where("id = ?", tournament.ID).Updates(ctx, *updatedTournament); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update tournament",
 		})
 	}
 
-	result, _ := gorm.G[models.Tournament](db.DB).Preload("Game", nil).Where("id = ?", updatedTournament.ID).First(ctx)
+	result, _ := gorm.G[models.Tournament](h.db).Preload("Game", nil).Where("id = ?", updatedTournament.ID).First(ctx)
 
 	response := mappers.ToTournamentResponse(&result)
 	return c.JSON(response)
 }
 
-func DeleteTournament(c *fiber.Ctx) error {
+func (h *TournamentHandler) DeleteTournament(c *fiber.Ctx) error {
 	ctx := c.Context()
 
 	id, err := strconv.Atoi(c.Params("id"))
@@ -142,14 +149,14 @@ func DeleteTournament(c *fiber.Ctx) error {
 		})
 	}
 
-	tournament, err := gorm.G[models.Tournament](db.DB).Where("id = ?", id).First(ctx)
+	tournament, err := gorm.G[models.Tournament](h.db).Where("id = ?", id).First(ctx)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
 		})
 	}
 
-	if _, err := gorm.G[models.Tournament](db.DB).Where("id = ?", tournament.ID).Delete(ctx); err != nil {
+	if _, err := gorm.G[models.Tournament](h.db).Where("id = ?", tournament.ID).Delete(ctx); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete tournament",
 		})
