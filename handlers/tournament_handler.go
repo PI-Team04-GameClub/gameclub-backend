@@ -3,17 +3,25 @@ package handlers
 import (
 	"strconv"
 
-	"github.com/PI-Team04-GameClub/gameclub-backend/db"
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
 	"github.com/PI-Team04-GameClub/gameclub-backend/observer"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
-func GetTournaments(c *fiber.Ctx) error {
+type TournamentHandler struct {
+	db *gorm.DB
+}
+
+func NewTournamentHandler(db *gorm.DB) *TournamentHandler {
+	return &TournamentHandler{db: db}
+}
+
+func (h *TournamentHandler) GetTournaments(c *fiber.Ctx) error {
 	var tournaments []models.Tournament
-	if err := db.DB.Preload("Game").Find(&tournaments).Error; err != nil {
+	if err := h.db.Preload("Game").Find(&tournaments).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch tournaments",
 		})
@@ -23,7 +31,7 @@ func GetTournaments(c *fiber.Ctx) error {
 	return c.JSON(responses)
 }
 
-func GetTournamentByID(c *fiber.Ctx) error {
+func (h *TournamentHandler) GetTournamentByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -32,7 +40,7 @@ func GetTournamentByID(c *fiber.Ctx) error {
 	}
 
 	var tournament models.Tournament
-	if err := db.DB.Preload("Game").First(&tournament, id).Error; err != nil {
+	if err := h.db.Preload("Game").First(&tournament, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
 		})
@@ -42,7 +50,7 @@ func GetTournamentByID(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-func CreateTournament(c *fiber.Ctx) error {
+func (h *TournamentHandler) CreateTournament(c *fiber.Ctx) error {
 	var req dtos.CreateTournamentRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -51,7 +59,7 @@ func CreateTournament(c *fiber.Ctx) error {
 	}
 
 	var game models.Game
-	if err := db.DB.First(&game, req.GameId).Error; err != nil {
+	if err := h.db.First(&game, req.GameId).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Game not found",
 		})
@@ -59,16 +67,16 @@ func CreateTournament(c *fiber.Ctx) error {
 
 	tournament := mappers.ToTournamentModel(req)
 
-	if err := db.DB.Create(&tournament).Error; err != nil {
+	if err := h.db.Create(&tournament).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create tournament",
 		})
 	}
 
-	db.DB.Preload("Game").First(&tournament, tournament.ID)
+	h.db.Preload("Game").First(&tournament, tournament.ID)
 
 	var users []models.User
-	db.DB.Find(&users)
+	h.db.Find(&users)
 
 	userEmails := make(map[string]string)
 	for _, user := range users {
@@ -84,7 +92,7 @@ func CreateTournament(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
-func UpdateTournament(c *fiber.Ctx) error {
+func (h *TournamentHandler) UpdateTournament(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -93,7 +101,7 @@ func UpdateTournament(c *fiber.Ctx) error {
 	}
 
 	var tournament models.Tournament
-	if err := db.DB.First(&tournament, id).Error; err != nil {
+	if err := h.db.First(&tournament, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
 		})
@@ -107,7 +115,7 @@ func UpdateTournament(c *fiber.Ctx) error {
 	}
 
 	var game models.Game
-	if err := db.DB.First(&game, req.GameId).Error; err != nil {
+	if err := h.db.First(&game, req.GameId).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Game not found",
 		})
@@ -115,19 +123,19 @@ func UpdateTournament(c *fiber.Ctx) error {
 
 	updatedTournament := mappers.UpdateTournamentFromRequest(&tournament, req)
 
-	if err := db.DB.Save(updatedTournament).Error; err != nil {
+	if err := h.db.Save(updatedTournament).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update tournament",
 		})
 	}
 
-	db.DB.Preload("Game").First(updatedTournament, updatedTournament.ID)
+	h.db.Preload("Game").First(updatedTournament, updatedTournament.ID)
 
 	response := mappers.ToTournamentResponse(updatedTournament)
 	return c.JSON(response)
 }
 
-func DeleteTournament(c *fiber.Ctx) error {
+func (h *TournamentHandler) DeleteTournament(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -136,13 +144,13 @@ func DeleteTournament(c *fiber.Ctx) error {
 	}
 
 	var tournament models.Tournament
-	if err := db.DB.First(&tournament, id).Error; err != nil {
+	if err := h.db.First(&tournament, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Tournament not found",
 		})
 	}
 
-	if err := db.DB.Delete(&tournament).Error; err != nil {
+	if err := h.db.Delete(&tournament).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete tournament",
 		})

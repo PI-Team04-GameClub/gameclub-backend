@@ -1,17 +1,25 @@
 package handlers
 
 import (
-	"github.com/PI-Team04-GameClub/gameclub-backend/db"
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
-func GetAllTeams(c *fiber.Ctx) error {
+type TeamHandler struct {
+	db *gorm.DB
+}
+
+func NewTeamHandler(db *gorm.DB) *TeamHandler {
+	return &TeamHandler{db: db}
+}
+
+func (h *TeamHandler) GetAllTeams(c *fiber.Ctx) error {
 	var teams []models.Team
 
-	if err := db.DB.Find(&teams).Error; err != nil {
+	if err := h.db.Find(&teams).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch teams",
 		})
@@ -20,11 +28,11 @@ func GetAllTeams(c *fiber.Ctx) error {
 	return c.JSON(mappers.ToTeamResponseList(teams))
 }
 
-func GetTeamByID(c *fiber.Ctx) error {
+func (h *TeamHandler) GetTeamByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	var team models.Team
-	if err := db.DB.First(&team, id).Error; err != nil {
+	if err := h.db.First(&team, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
@@ -33,7 +41,7 @@ func GetTeamByID(c *fiber.Ctx) error {
 	return c.JSON(mappers.ToTeamResponse(&team))
 }
 
-func CreateTeam(c *fiber.Ctx) error {
+func (h *TeamHandler) CreateTeam(c *fiber.Ctx) error {
 	var req dtos.CreateTeamRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -44,7 +52,7 @@ func CreateTeam(c *fiber.Ctx) error {
 
 	team := mappers.ToTeamModel(req)
 
-	if err := db.DB.Create(&team).Error; err != nil {
+	if err := h.db.Create(&team).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create team",
 		})
@@ -53,11 +61,11 @@ func CreateTeam(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(mappers.ToTeamResponse(&team))
 }
 
-func UpdateTeam(c *fiber.Ctx) error {
+func (h *TeamHandler) UpdateTeam(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	var team models.Team
-	if err := db.DB.First(&team, id).Error; err != nil {
+	if err := h.db.First(&team, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
@@ -72,7 +80,7 @@ func UpdateTeam(c *fiber.Ctx) error {
 
 	team.Name = req.Name
 
-	if err := db.DB.Save(&team).Error; err != nil {
+	if err := h.db.Save(&team).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update team",
 		})
@@ -81,17 +89,17 @@ func UpdateTeam(c *fiber.Ctx) error {
 	return c.JSON(mappers.ToTeamResponse(&team))
 }
 
-func DeleteTeam(c *fiber.Ctx) error {
+func (h *TeamHandler) DeleteTeam(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	var team models.Team
-	if err := db.DB.First(&team, id).Error; err != nil {
+	if err := h.db.First(&team, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
 	}
 
-	if err := db.DB.Delete(&team).Error; err != nil {
+	if err := h.db.Delete(&team).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete team",
 		})
