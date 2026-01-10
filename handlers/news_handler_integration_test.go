@@ -187,7 +187,6 @@ func TestNewsHandler_CreateNews_ReturnsCreatedNews(t *testing.T) {
 	assert.Equal(t, "Creator", response.Author)
 }
 
-
 func TestNewsHandler_UpdateNews_NotFound(t *testing.T) {
 	// Given: An empty database
 	db := setupTestDB(t)
