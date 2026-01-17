@@ -5,6 +5,7 @@ import (
 
 	"github.com/PI-Team04-GameClub/gameclub-backend/config"
 	"github.com/PI-Team04-GameClub/gameclub-backend/db"
+	"github.com/PI-Team04-GameClub/gameclub-backend/middleware"
 	"github.com/PI-Team04-GameClub/gameclub-backend/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -28,6 +29,9 @@ func main() {
 			})
 		},
 	})
+
+	// Security headers middleware - should be first!
+	app.Use(middleware.SecurityHeaders())
 
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
