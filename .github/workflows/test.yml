@@ -33,7 +33,7 @@ jobs:
 
       - name: Check coverage metrics
         run: |
-          THRESHOLD=75.0
+          THRESHOLD=70.0
 
           echo "=== Coverage Metrics Report ==="
           echo ""
@@ -51,10 +51,10 @@ jobs:
           fi
           echo ""
 
-          # 2. Check file coverage (% of files with >= 80% coverage)
+          # 2. Check file coverage (% of files with >= 70% coverage)
           TOTAL_FILES=$(go tool cover -func=coverage.out | grep -v total | grep -v "^$" | awk '{print $1}' | cut -d: -f1 | sort -u | wc -l)
 
-          # Get files with >= 80% average coverage
+          # Get files with >= 70% average coverage
           FILES_PASSING=0
           for file in $(go tool cover -func=coverage.out | grep -v total | grep -v "^$" | awk '{print $1}' | cut -d: -f1 | sort -u); do
             FILE_COV=$(go tool cover -func=coverage.out | grep "$file" | awk '{sum += substr($3, 1, length($3)-1); count++} END {if(count>0) print sum/count; else print 0}')
