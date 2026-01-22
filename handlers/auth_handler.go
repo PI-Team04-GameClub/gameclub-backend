@@ -8,9 +8,13 @@ import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/models"
 	"github.com/PI-Team04-GameClub/gameclub-backend/repositories"
 	"github.com/PI-Team04-GameClub/gameclub-backend/security"
+	"github.com/PI-Team04-GameClub/gameclub-backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
+
+// errResponseSent is a sentinel error indicating that a response has already been sent
+var errResponseSent = fmt.Errorf("response already sent")
 
 type AuthHandler struct {
 	userRepo repositories.UserRepository
@@ -33,38 +37,6 @@ func hashPassword(password string) string {
 
 func verifyPassword(hashedPassword, password string) bool {
 	return hashPassword(password) == hashedPassword
-}
-
-// Error response helpers - these send the response and return an error to signal early return
-
-var errResponseSent = fmt.Errorf("response already sent")
-
-func badRequestError(c *fiber.Ctx, message string) error {
-	c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-		"error": message,
-	})
-	return errResponseSent
-}
-
-func unauthorizedError(c *fiber.Ctx, message string) error {
-	c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-		"error": message,
-	})
-	return errResponseSent
-}
-
-func conflictError(c *fiber.Ctx, message string) error {
-	c.Status(fiber.StatusConflict).JSON(fiber.Map{
-		"error": message,
-	})
-	return errResponseSent
-}
-
-func internalServerError(c *fiber.Ctx, message string) error {
-	c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-		"error": message,
-	})
-	return errResponseSent
 }
 
 // Validation helpers
@@ -112,16 +84,14 @@ func buildUserResponse(user *models.User) fiber.Map {
 func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 	req, err := ah.parseRegisterRequest(c)
 	if err != nil {
-		badRequestError(c, "Invalid request body")
-		return nil
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
 	}
 
 	if err := validateRegisterRequest(req); err != nil {
-		badRequestError(c, err.Error())
-		return nil
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(err.Error()))
 	}
 
-	if err := ah.checkEmailAvailable(c, req.Email); err != nil {
+	if err := ah.checkEmailAvailable(c); err != nil {
 		return nil
 	}
 
@@ -136,13 +106,11 @@ func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 	req, err := ah.parseLoginRequest(c)
 	if err != nil {
-		badRequestError(c, "Invalid request body")
-		return nil
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
 	}
 
 	if err := validateLoginRequest(req); err != nil {
-		badRequestError(c, err.Error())
-		return nil
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(err.Error()))
 	}
 
 	user, err := ah.findUserByEmail(c, req.Email)
@@ -151,8 +119,7 @@ func (ah *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	if !verifyPassword(user.Password, req.Password) {
-		unauthorizedError(c, "Invalid password")
-		return nil
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.Unauthorized("Invalid password"))
 	}
 
 	return ah.respondWithAuthToken(c, user, fiber.StatusOK)
@@ -181,14 +148,18 @@ func (ah *AuthHandler) parseLoginRequest(c *fiber.Ctx) (*dtos.LoginRequest, erro
 	return &req, nil
 }
 
-func (ah *AuthHandler) checkEmailAvailable(c *fiber.Ctx, email string) error {
+func (ah *AuthHandler) checkEmailAvailable(c *fiber.Ctx) error {
+	var req dtos.RegisterRequest
+	c.BodyParser(&req)
 	ctx := c.Context()
-	_, err := ah.userRepo.FindByEmail(ctx, email)
+	_, err := ah.userRepo.FindByEmail(ctx, req.Email)
 	if err == nil {
-		return conflictError(c, "Email already registered")
+		c.Status(fiber.StatusConflict).JSON(utils.Conflict("Email already registered"))
+		return errResponseSent
 	}
 	if err != gorm.ErrRecordNotFound {
-		return internalServerError(c, "Database error")
+		c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Database error"))
+		return errResponseSent
 	}
 	return nil
 }
@@ -203,7 +174,8 @@ func (ah *AuthHandler) createUser(c *fiber.Ctx, req *dtos.RegisterRequest) (*mod
 	}
 
 	if err := ah.userRepo.Create(ctx, user); err != nil {
-		return nil, internalServerError(c, "Failed to create user")
+		c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to create user"))
+		return nil, errResponseSent
 	}
 	return user, nil
 }
@@ -213,9 +185,11 @@ func (ah *AuthHandler) findUserByEmail(c *fiber.Ctx, email string) (*models.User
 	user, err := ah.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, unauthorizedError(c, "User with this email address not found")
+			c.Status(fiber.StatusUnauthorized).JSON(utils.Unauthorized("User with this email address not found"))
+			return nil, errResponseSent
 		}
-		return nil, internalServerError(c, "Database access error")
+		c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Database access error"))
+		return nil, errResponseSent
 	}
 	return user, nil
 }
@@ -223,7 +197,7 @@ func (ah *AuthHandler) findUserByEmail(c *fiber.Ctx, email string) (*models.User
 func (ah *AuthHandler) respondWithAuthToken(c *fiber.Ctx, user *models.User, status int) error {
 	token, err := security.GenerateToken(user.ID, user.Email, user.FirstName, user.LastName)
 	if err != nil {
-		internalServerError(c, "Failed to generate token")
+		c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to generate token"))
 		return nil
 	}
 	return c.Status(status).JSON(buildAuthResponse(user, token))

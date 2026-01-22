@@ -6,6 +6,7 @@ import (
 	"github.com/PI-Team04-GameClub/gameclub-backend/dtos"
 	"github.com/PI-Team04-GameClub/gameclub-backend/mappers"
 	"github.com/PI-Team04-GameClub/gameclub-backend/repositories"
+	"github.com/PI-Team04-GameClub/gameclub-backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -32,9 +33,7 @@ func NewNewsHandlerWithRepo(newsRepo repositories.NewsRepository, userRepo repos
 func (h *NewsHandler) GetNews(c *fiber.Ctx) error {
 	newsList, err := h.newsRepo.FindAll(c.Context())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch news",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to fetch news"))
 	}
 
 	responses := mappers.ToNewsResponseList(newsList)
@@ -46,29 +45,21 @@ func (h *NewsHandler) CreateNews(c *fiber.Ctx) error {
 
 	var req dtos.CreateNewsRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
 	}
 
 	if req.AuthorId == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Author ID is required",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Author ID is required"))
 	}
 
 	_, err := h.userRepo.FindByID(ctx, req.AuthorId)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid author ID",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid author ID"))
 	}
 
 	news := mappers.ToNewsModel(req, req.AuthorId)
 	if err := h.newsRepo.Create(ctx, &news); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create news",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to create news"))
 	}
 
 	createdNews, _ := h.newsRepo.FindByID(ctx, int(news.ID))
@@ -82,32 +73,24 @@ func (h *NewsHandler) UpdateNews(c *fiber.Ctx) error {
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid news ID",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid news ID"))
 	}
 
 	news, err := h.newsRepo.FindByID(ctx, id)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "News not found",
-		})
+		return c.Status(fiber.StatusNotFound).JSON(utils.NotFound())
 	}
 
 	var req dtos.CreateNewsRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
 	}
 
 	news.Title = req.Title
 	news.Description = req.Description
 
 	if err := h.newsRepo.Update(ctx, news); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update news",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to update news"))
 	}
 
 	response := mappers.ToNewsResponse(news, news.Author.FirstName)
@@ -119,22 +102,16 @@ func (h *NewsHandler) DeleteNews(c *fiber.Ctx) error {
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid news ID",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid news ID"))
 	}
 
 	_, err = h.newsRepo.FindByID(ctx, id)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "News not found",
-		})
+		return c.Status(fiber.StatusNotFound).JSON(utils.NotFound())
 	}
 
 	if err := h.newsRepo.Delete(ctx, id); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to delete news",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to delete news"))
 	}
 
 	return c.Status(fiber.StatusNoContent).Send(nil)
