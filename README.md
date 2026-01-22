@@ -47,7 +47,7 @@ gameclub-backend
 ```bash
 export DB_HOST=localhost
 export DB_USER=secret_very_very
-export DB_PASSWORD=secrect_top_secret
+export DB_PASSWORD=secret_top_secret
 export DB_NAME=gameclub
 export DB_PORT=5432
 ```
