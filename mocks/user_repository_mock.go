@@ -39,3 +39,13 @@ func (m *MockUserRepository) FindAll(ctx context.Context) ([]models.User, error)
 	}
 	return args.Get(0).([]models.User), args.Error(1)
 }
+
+func (m *MockUserRepository) Update(ctx context.Context, user *models.User) error {
+	args := m.Called(ctx, user)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) Delete(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}

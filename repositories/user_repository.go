@@ -12,6 +12,8 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id uint) (*models.User, error)
 	Create(ctx context.Context, user *models.User) error
 	FindAll(ctx context.Context) ([]models.User, error)
+	Update(ctx context.Context, user *models.User) error
+	Delete(ctx context.Context, id uint) error
 }
 
 type userRepository struct {
@@ -44,4 +46,14 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *userRepository) FindAll(ctx context.Context) ([]models.User, error) {
 	return gorm.G[models.User](r.db).Find(ctx)
+}
+
+func (r *userRepository) Update(ctx context.Context, user *models.User) error {
+	_, err := gorm.G[models.User](r.db).Where("id = ?", user.ID).Updates(ctx, *user)
+	return err
+}
+
+func (r *userRepository) Delete(ctx context.Context, id uint) error {
+	_, err := gorm.G[models.User](r.db).Where("id = ?", id).Delete(ctx)
+	return err
 }
