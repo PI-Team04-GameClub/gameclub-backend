@@ -11,6 +11,10 @@ type MockGameRepository struct {
 	mock.Mock
 }
 
+func (m *MockGameRepository) mockMethodError(methodName string, args ...interface{}) error {
+	return m.MethodCalled(methodName, args...).Error(0)
+}
+
 func (m *MockGameRepository) FindAll(ctx context.Context) ([]models.Game, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
@@ -28,13 +32,11 @@ func (m *MockGameRepository) FindByID(ctx context.Context, id string) (*models.G
 }
 
 func (m *MockGameRepository) Create(ctx context.Context, game *models.Game) error {
-	args := m.Called(ctx, game)
-	return args.Error(0)
+	return m.mockMethodError("Create", ctx, game)
 }
 
 func (m *MockGameRepository) Update(ctx context.Context, game *models.Game) error {
-	args := m.Called(ctx, game)
-	return args.Error(0)
+	return m.mockMethodError("Update", ctx, game)
 }
 
 func (m *MockGameRepository) Delete(ctx context.Context, id uint) error {

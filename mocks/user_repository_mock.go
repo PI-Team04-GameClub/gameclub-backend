@@ -11,6 +11,10 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
+func (m *MockUserRepository) mockMethodError(methodName string, args ...interface{}) error {
+	return m.MethodCalled(methodName, args...).Error(0)
+}
+
 func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
@@ -28,8 +32,7 @@ func (m *MockUserRepository) FindByID(ctx context.Context, id uint) (*models.Use
 }
 
 func (m *MockUserRepository) Create(ctx context.Context, user *models.User) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
+	return m.mockMethodError("Create", ctx, user)
 }
 
 func (m *MockUserRepository) FindAll(ctx context.Context) ([]models.User, error) {
@@ -41,6 +44,5 @@ func (m *MockUserRepository) FindAll(ctx context.Context) ([]models.User, error)
 }
 
 func (m *MockUserRepository) Update(ctx context.Context, user *models.User) error {
-	args := m.Called(ctx, user)
-	return args.Error(0)
+	return m.mockMethodError("Update", ctx, user)
 }

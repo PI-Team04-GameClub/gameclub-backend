@@ -11,9 +11,12 @@ type MockCommentRepository struct {
 	mock.Mock
 }
 
+func (m *MockCommentRepository) mockMethodError(methodName string, args ...interface{}) error {
+	return m.MethodCalled(methodName, args...).Error(0)
+}
+
 func (m *MockCommentRepository) Create(ctx context.Context, comment *models.Comment) error {
-	args := m.Called(ctx, comment)
-	return args.Error(0)
+	return m.mockMethodError("Create", ctx, comment)
 }
 
 func (m *MockCommentRepository) FindByID(ctx context.Context, id uint) (*models.Comment, error) {
@@ -25,8 +28,7 @@ func (m *MockCommentRepository) FindByID(ctx context.Context, id uint) (*models.
 }
 
 func (m *MockCommentRepository) Update(ctx context.Context, comment *models.Comment) error {
-	args := m.Called(ctx, comment)
-	return args.Error(0)
+	return m.mockMethodError("Update", ctx, comment)
 }
 
 func (m *MockCommentRepository) Delete(ctx context.Context, id uint) error {

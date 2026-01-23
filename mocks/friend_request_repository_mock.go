@@ -11,9 +11,12 @@ type MockFriendRequestRepository struct {
 	mock.Mock
 }
 
+func (m *MockFriendRequestRepository) mockMethodError(methodName string, args ...interface{}) error {
+	return m.MethodCalled(methodName, args...).Error(0)
+}
+
 func (m *MockFriendRequestRepository) Create(ctx context.Context, friendRequest *models.FriendRequest) error {
-	args := m.Called(ctx, friendRequest)
-	return args.Error(0)
+	return m.mockMethodError("Create", ctx, friendRequest)
 }
 
 func (m *MockFriendRequestRepository) FindByID(ctx context.Context, id uint) (*models.FriendRequest, error) {
@@ -25,8 +28,7 @@ func (m *MockFriendRequestRepository) FindByID(ctx context.Context, id uint) (*m
 }
 
 func (m *MockFriendRequestRepository) Update(ctx context.Context, friendRequest *models.FriendRequest) error {
-	args := m.Called(ctx, friendRequest)
-	return args.Error(0)
+	return m.mockMethodError("Update", ctx, friendRequest)
 }
 
 func (m *MockFriendRequestRepository) Delete(ctx context.Context, id uint) error {
