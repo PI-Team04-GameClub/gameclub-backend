@@ -14,4 +14,5 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	SetupTeamRoutes(api, db)
 	SetupTournamentRoutes(api, db)
 	SetupNewsRoutes(api, db)
+	SetupCommentRoutes(api, db)
 }
