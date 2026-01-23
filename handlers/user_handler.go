@@ -121,21 +121,3 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 
 	return c.JSON(mappers.ToUserResponse(updatedUser))
 }
-
-func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid user ID"))
-	}
-
-	user, err := h.userRepo.FindByID(c.Context(), uint(id))
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(utils.NotFound())
-	}
-
-	if err := h.userRepo.Delete(c.Context(), user.ID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to delete user"))
-	}
-
-	return c.SendStatus(fiber.StatusNoContent)
-}

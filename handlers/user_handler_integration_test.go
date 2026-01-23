@@ -22,7 +22,6 @@ func setupUserTestApp(db *gorm.DB) *fiber.App {
 	app.Get("/users/:id", userHandler.GetUserByID)
 	app.Post("/users", userHandler.CreateUser)
 	app.Put("/users/:id", userHandler.UpdateUser)
-	app.Delete("/users/:id", userHandler.DeleteUser)
 
 	return app
 }
@@ -430,74 +429,6 @@ func TestUserHandler_UpdateUser_PasswordIsHashed(t *testing.T) {
 	db.First(&updatedUser, user.ID)
 	assert.NotEqual(t, "newpassword123", updatedUser.Password)
 	assert.NotEqual(t, "oldhash", updatedUser.Password)
-}
-
-func TestUserHandler_DeleteUser_Success(t *testing.T) {
-	// Given: An existing user
-	db := setupTestDB(t)
-	app := setupUserTestApp(db)
-
-	user := models.User{FirstName: "John", Email: "john@example.com", Password: "hashed"}
-	db.Create(&user)
-
-	req := httptest.NewRequest("DELETE", fmt.Sprintf("/users/%d", user.ID), nil)
-
-	// When: Making the delete user request
-	resp, err := app.Test(req)
-
-	// Then: The user should be deleted
-	assert.NoError(t, err)
-	assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
-}
-
-func TestUserHandler_DeleteUser_NotFound(t *testing.T) {
-	// Given: An empty database
-	db := setupTestDB(t)
-	app := setupUserTestApp(db)
-
-	req := httptest.NewRequest("DELETE", "/users/999", nil)
-
-	// When: Making the delete request for non-existent user
-	resp, err := app.Test(req)
-
-	// Then: The request should return not found
-	assert.NoError(t, err)
-	assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
-}
-
-func TestUserHandler_DeleteUser_InvalidID(t *testing.T) {
-	// Given: An invalid user ID
-	db := setupTestDB(t)
-	app := setupUserTestApp(db)
-
-	req := httptest.NewRequest("DELETE", "/users/invalid", nil)
-
-	// When: Making the delete user request with invalid ID
-	resp, err := app.Test(req)
-
-	// Then: The request should return bad request
-	assert.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-}
-
-func TestUserHandler_DeleteUser_ActuallyDeletes(t *testing.T) {
-	// Given: An existing user
-	db := setupTestDB(t)
-	app := setupUserTestApp(db)
-
-	user := models.User{FirstName: "John", Email: "john@example.com", Password: "hashed"}
-	db.Create(&user)
-	userID := user.ID
-
-	req := httptest.NewRequest("DELETE", fmt.Sprintf("/users/%d", userID), nil)
-
-	// When: Making the delete user request
-	app.Test(req)
-
-	// Then: The user should no longer exist in the database
-	var count int64
-	db.Model(&models.User{}).Where("id = ?", userID).Count(&count)
-	assert.Equal(t, int64(0), count)
 }
 
 func TestNewUserHandler(t *testing.T) {

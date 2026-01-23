@@ -12,5 +12,4 @@ func SetupUserRoutes(api fiber.Router, db *gorm.DB) {
 	api.Get("/users/:id", userHandler.GetUserByID)
 	api.Post("/users", userHandler.CreateUser)
 	api.Put("/users/:id", userHandler.UpdateUser)
-	api.Delete("/users/:id", userHandler.DeleteUser)
 }
