@@ -7,7 +7,7 @@
     "gofiber",
     "gorm",
     "golang",
-    "ldhash",
+    "oldhash",
     "dtos",
     "mappers",
     "repos",
