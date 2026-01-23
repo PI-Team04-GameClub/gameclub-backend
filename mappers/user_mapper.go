@@ -31,6 +31,14 @@ func ToUserResponseList(users []models.User) []dtos.UserResponse {
 	return responses
 }
 
+func ToUserResponseListFromPointers(users []*models.User) []dtos.UserResponse {
+	responses := make([]dtos.UserResponse, len(users))
+	for i, user := range users {
+		responses[i] = ToUserResponse(user)
+	}
+	return responses
+}
+
 func UpdateUserFromRequest(existingUser *models.User, req dtos.UpdateUserRequest) *models.User {
 	if req.FirstName != "" {
 		existingUser.FirstName = req.FirstName
