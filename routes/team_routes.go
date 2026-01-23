@@ -13,4 +13,6 @@ func SetupTeamRoutes(api fiber.Router, db *gorm.DB) {
 	api.Post("/teams", teamHandler.CreateTeam)
 	api.Put("/teams/:id", teamHandler.UpdateTeam)
 	api.Delete("/teams/:id", teamHandler.DeleteTeam)
+	api.Get("/teams/:id/members", teamHandler.GetTeamMembers)
+	api.Post("/teams/:id/members/:userId", teamHandler.JoinTeam)
 }
