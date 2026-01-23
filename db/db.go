@@ -28,6 +28,7 @@ func Migrate() {
 		&models.Tournament{},
 		&models.News{},
 		&models.Comment{},
+		&models.FriendRequest{},
 	); err != nil {
 		log.Fatalf("Failed to migrate models: %v", err)
 	}
