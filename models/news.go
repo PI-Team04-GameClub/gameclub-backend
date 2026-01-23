@@ -11,5 +11,6 @@ type News struct {
 	AuthorID    uint   `gorm:"not null"`
 	Date        string
 
-	Author User `gorm:"foreignKey:AuthorID"`
+	Author   User      `gorm:"foreignKey:AuthorID"`
+	Comments []Comment `gorm:"foreignKey:NewsID"`
 }
