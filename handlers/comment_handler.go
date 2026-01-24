@@ -49,13 +49,11 @@ func (h *CommentHandler) CreateComment(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "News ID is required"})
 	}
 
-	// Verify user exists
 	_, err := h.userRepo.FindByID(c.Context(), req.UserID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	// Verify news exists
 	_, err = h.newsRepo.FindByID(c.Context(), int(req.NewsID))
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "News not found"})
@@ -66,7 +64,6 @@ func (h *CommentHandler) CreateComment(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create comment"})
 	}
 
-	// Fetch the created comment with relations
 	createdComment, err := h.commentRepo.FindByID(c.Context(), comment.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve created comment"})
@@ -101,7 +98,6 @@ func (h *CommentHandler) UpdateComment(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update comment"})
 	}
 
-	// Fetch updated comment with relations
 	updatedComment, err := h.commentRepo.FindByID(c.Context(), uint(id))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve updated comment"})
@@ -116,7 +112,6 @@ func (h *CommentHandler) GetCommentsByUserID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid user ID"})
 	}
 
-	// Verify user exists
 	_, err = h.userRepo.FindByID(c.Context(), uint(userID))
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
@@ -136,7 +131,6 @@ func (h *CommentHandler) GetCommentsByNewsID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid news ID"})
 	}
 
-	// Verify news exists
 	_, err = h.newsRepo.FindByID(c.Context(), newsID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "News not found"})

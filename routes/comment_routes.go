@@ -14,9 +14,7 @@ func SetupCommentRoutes(api fiber.Router, db *gorm.DB) {
 	comments.Post("/", commentHandler.CreateComment)
 	comments.Put("/:id", commentHandler.UpdateComment)
 
-	// Get comments by user ID
 	api.Get("/users/:id/comments", commentHandler.GetCommentsByUserID)
 
-	// Get comments by news ID
 	api.Get("/news/:id/comments", commentHandler.GetCommentsByNewsID)
 }

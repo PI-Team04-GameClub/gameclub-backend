@@ -54,24 +54,20 @@ func (h *FriendRequestHandler) CreateFriendRequest(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Receiver ID is required"))
 	}
 
-	// Cannot send friend request to self
 	if req.SenderID == req.ReceiverID {
 		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Cannot send friend request to yourself"))
 	}
 
-	// Verify sender exists
 	_, err := h.userRepo.FindByID(c.Context(), req.SenderID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(utils.BadRequest("Sender not found"))
 	}
 
-	// Verify receiver exists
 	_, err = h.userRepo.FindByID(c.Context(), req.ReceiverID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(utils.BadRequest("Receiver not found"))
 	}
 
-	// Check if friend request already exists between these users
 	existingRequest, _ := h.friendRequestRepo.FindByUsers(c.Context(), req.SenderID, req.ReceiverID)
 	if existingRequest != nil {
 		if existingRequest.Status == models.StatusPending {
@@ -87,7 +83,6 @@ func (h *FriendRequestHandler) CreateFriendRequest(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to create friend request"))
 	}
 
-	// Fetch the created friend request with relations
 	createdFriendRequest, err := h.friendRequestRepo.FindByID(c.Context(), friendRequest.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to retrieve created friend request"))
@@ -176,7 +171,6 @@ func (h *FriendRequestHandler) GetSentFriendRequests(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidUserID))
 	}
 
-	// Verify user exists
 	_, err = h.userRepo.FindByID(c.Context(), uint(userID))
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(utils.BadRequest(errUserNotFound))
@@ -196,7 +190,6 @@ func (h *FriendRequestHandler) GetReceivedFriendRequests(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidUserID))
 	}
 
-	// Verify user exists
 	_, err = h.userRepo.FindByID(c.Context(), uint(userID))
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(utils.BadRequest(errUserNotFound))
@@ -216,7 +209,6 @@ func (h *FriendRequestHandler) GetFriends(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidUserID))
 	}
 
-	// Verify user exists
 	_, err = h.userRepo.FindByID(c.Context(), uint(userID))
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(utils.BadRequest(errUserNotFound))

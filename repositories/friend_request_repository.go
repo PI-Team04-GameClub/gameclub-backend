@@ -86,7 +86,6 @@ func (r *friendRequestRepository) FindPendingByReceiverID(ctx context.Context, r
 func (r *friendRequestRepository) FindFriendsByUserID(ctx context.Context, userID uint) ([]models.User, error) {
 	var friends []models.User
 
-	// Get users from accepted friend requests where the user is either sender or receiver
 	err := r.db.WithContext(ctx).Raw(`
 		SELECT DISTINCT u.* FROM users u
 		INNER JOIN friend_requests fr ON
