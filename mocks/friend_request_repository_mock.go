@@ -11,22 +11,28 @@ type MockFriendRequestRepository struct {
 	mock.Mock
 }
 
+func (m *MockFriendRequestRepository) mockMethodError(methodName string, args ...interface{}) error {
+	return m.MethodCalled(methodName, args...).Error(0)
+}
+
+func getResultOrNil[T any](args mock.Arguments) (T, error) {
+	if args.Get(0) == nil {
+		var zero T
+		return zero, args.Error(1)
+	}
+	return args.Get(0).(T), args.Error(1)
+}
+
 func (m *MockFriendRequestRepository) Create(ctx context.Context, friendRequest *models.FriendRequest) error {
-	args := m.Called(ctx, friendRequest)
-	return args.Error(0)
+	return m.mockMethodError("Create", ctx, friendRequest)
 }
 
 func (m *MockFriendRequestRepository) FindByID(ctx context.Context, id uint) (*models.FriendRequest, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.FriendRequest), args.Error(1)
+	return getResultOrNil[*models.FriendRequest](m.Called(ctx, id))
 }
 
 func (m *MockFriendRequestRepository) Update(ctx context.Context, friendRequest *models.FriendRequest) error {
-	args := m.Called(ctx, friendRequest)
-	return args.Error(0)
+	return m.mockMethodError("Update", ctx, friendRequest)
 }
 
 func (m *MockFriendRequestRepository) Delete(ctx context.Context, id uint) error {
@@ -35,41 +41,21 @@ func (m *MockFriendRequestRepository) Delete(ctx context.Context, id uint) error
 }
 
 func (m *MockFriendRequestRepository) FindBySenderID(ctx context.Context, senderID uint) ([]models.FriendRequest, error) {
-	args := m.Called(ctx, senderID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]models.FriendRequest), args.Error(1)
+	return getResultOrNil[[]models.FriendRequest](m.Called(ctx, senderID))
 }
 
 func (m *MockFriendRequestRepository) FindByReceiverID(ctx context.Context, receiverID uint) ([]models.FriendRequest, error) {
-	args := m.Called(ctx, receiverID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]models.FriendRequest), args.Error(1)
+	return getResultOrNil[[]models.FriendRequest](m.Called(ctx, receiverID))
 }
 
 func (m *MockFriendRequestRepository) FindPendingByReceiverID(ctx context.Context, receiverID uint) ([]models.FriendRequest, error) {
-	args := m.Called(ctx, receiverID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]models.FriendRequest), args.Error(1)
+	return getResultOrNil[[]models.FriendRequest](m.Called(ctx, receiverID))
 }
 
 func (m *MockFriendRequestRepository) FindFriendsByUserID(ctx context.Context, userID uint) ([]models.User, error) {
-	args := m.Called(ctx, userID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]models.User), args.Error(1)
+	return getResultOrNil[[]models.User](m.Called(ctx, userID))
 }
 
 func (m *MockFriendRequestRepository) FindByUsers(ctx context.Context, userID1, userID2 uint) (*models.FriendRequest, error) {
-	args := m.Called(ctx, userID1, userID2)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.FriendRequest), args.Error(1)
+	return getResultOrNil[*models.FriendRequest](m.Called(ctx, userID1, userID2))
 }

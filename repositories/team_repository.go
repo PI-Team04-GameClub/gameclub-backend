@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const teamWhereIDEquals = "id = ?"
+
 type TeamRepository interface {
 	FindAll(ctx context.Context) ([]models.Team, error)
 	FindByID(ctx context.Context, id string) (*models.Team, error)
@@ -30,7 +32,7 @@ func (r *teamRepository) FindAll(ctx context.Context) ([]models.Team, error) {
 }
 
 func (r *teamRepository) FindByID(ctx context.Context, id string) (*models.Team, error) {
-	team, err := gorm.G[models.Team](r.db).Where("id = ?", id).First(ctx)
+	team, err := gorm.G[models.Team](r.db).Where(teamWhereIDEquals, id).First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -42,17 +44,17 @@ func (r *teamRepository) Create(ctx context.Context, team *models.Team) error {
 }
 
 func (r *teamRepository) Update(ctx context.Context, team *models.Team) error {
-	_, err := gorm.G[models.Team](r.db).Where("id = ?", team.ID).Updates(ctx, *team)
+	_, err := gorm.G[models.Team](r.db).Where(teamWhereIDEquals, team.ID).Updates(ctx, *team)
 	return err
 }
 
 func (r *teamRepository) Delete(ctx context.Context, id uint) error {
-	_, err := gorm.G[models.Team](r.db).Where("id = ?", id).Delete(ctx)
+	_, err := gorm.G[models.Team](r.db).Where(teamWhereIDEquals, id).Delete(ctx)
 	return err
 }
 
 func (r *teamRepository) FindByIDWithMembers(ctx context.Context, id string) (*models.Team, error) {
-	team, err := gorm.G[models.Team](r.db).Preload("Users", nil).Where("id = ?", id).First(ctx)
+	team, err := gorm.G[models.Team](r.db).Preload("Users", nil).Where(teamWhereIDEquals, id).First(ctx)
 	if err != nil {
 		return nil, err
 	}

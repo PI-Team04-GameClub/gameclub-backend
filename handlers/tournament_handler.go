@@ -12,6 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	errInvalidTournamentID = "Invalid tournament ID"
+	errInvalidRequestBody  = "Invalid request body"
+	errGameNotFound        = "Game not found"
+)
+
 type TournamentHandler struct {
 	tournamentRepo repositories.TournamentRepository
 	gameRepo       repositories.GameRepository
@@ -47,7 +53,7 @@ func (h *TournamentHandler) GetTournaments(c *fiber.Ctx) error {
 func (h *TournamentHandler) GetTournamentByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid tournament ID"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidTournamentID))
 	}
 
 	tournament, err := h.tournamentRepo.FindByID(c.Context(), id)
@@ -64,12 +70,12 @@ func (h *TournamentHandler) CreateTournament(c *fiber.Ctx) error {
 
 	var req dtos.CreateTournamentRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidRequestBody))
 	}
 
 	_, err := h.gameRepo.FindByID(ctx, strconv.Itoa(int(req.GameId)))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Game not found"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errGameNotFound))
 	}
 
 	tournament := mappers.ToTournamentModel(req)
@@ -101,7 +107,7 @@ func (h *TournamentHandler) UpdateTournament(c *fiber.Ctx) error {
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid tournament ID"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidTournamentID))
 	}
 
 	tournament, err := h.tournamentRepo.FindByID(ctx, id)
@@ -111,12 +117,12 @@ func (h *TournamentHandler) UpdateTournament(c *fiber.Ctx) error {
 
 	var req dtos.CreateTournamentRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidRequestBody))
 	}
 
 	_, err = h.gameRepo.FindByID(ctx, strconv.Itoa(int(req.GameId)))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Game not found"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errGameNotFound))
 	}
 
 	updatedTournament := mappers.UpdateTournamentFromRequest(tournament, req)
@@ -136,7 +142,7 @@ func (h *TournamentHandler) DeleteTournament(c *fiber.Ctx) error {
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid tournament ID"))
+		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest(errInvalidTournamentID))
 	}
 
 	_, err = h.tournamentRepo.FindByID(ctx, id)

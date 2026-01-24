@@ -8,6 +8,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	preloadUser = "User"
+	preloadNews = "News"
+)
+
 type CommentRepository interface {
 	Create(ctx context.Context, comment *models.Comment) error
 	FindByID(ctx context.Context, id uint) (*models.Comment, error)
@@ -31,7 +36,7 @@ func (r *commentRepository) Create(ctx context.Context, comment *models.Comment)
 
 func (r *commentRepository) FindByID(ctx context.Context, id uint) (*models.Comment, error) {
 	var comment models.Comment
-	err := r.db.WithContext(ctx).Preload("User").Preload("News").First(&comment, id).Error
+	err := r.db.WithContext(ctx).Preload(preloadUser).Preload(preloadNews).First(&comment, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +53,7 @@ func (r *commentRepository) Delete(ctx context.Context, id uint) error {
 
 func (r *commentRepository) FindByUserID(ctx context.Context, userID uint) ([]models.Comment, error) {
 	var comments []models.Comment
-	err := r.db.WithContext(ctx).Preload("User").Preload("News").Where("user_id = ?", userID).Find(&comments).Error
+	err := r.db.WithContext(ctx).Preload(preloadUser).Preload(preloadNews).Where("user_id = ?", userID).Find(&comments).Error
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +62,7 @@ func (r *commentRepository) FindByUserID(ctx context.Context, userID uint) ([]mo
 
 func (r *commentRepository) FindByNewsID(ctx context.Context, newsID uint) ([]models.Comment, error) {
 	var comments []models.Comment
-	err := r.db.WithContext(ctx).Preload("User").Preload("News").Where("news_id = ?", newsID).Find(&comments).Error
+	err := r.db.WithContext(ctx).Preload(preloadUser).Preload(preloadNews).Where("news_id = ?", newsID).Find(&comments).Error
 	if err != nil {
 		return nil, err
 	}

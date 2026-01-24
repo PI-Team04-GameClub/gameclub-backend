@@ -8,6 +8,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	preloadSender   = "Sender"
+	preloadReceiver = "Receiver"
+)
+
 type FriendRequestRepository interface {
 	Create(ctx context.Context, friendRequest *models.FriendRequest) error
 	FindByID(ctx context.Context, id uint) (*models.FriendRequest, error)
@@ -34,7 +39,7 @@ func (r *friendRequestRepository) Create(ctx context.Context, friendRequest *mod
 
 func (r *friendRequestRepository) FindByID(ctx context.Context, id uint) (*models.FriendRequest, error) {
 	var friendRequest models.FriendRequest
-	err := r.db.WithContext(ctx).Preload("Sender").Preload("Receiver").First(&friendRequest, id).Error
+	err := r.db.WithContext(ctx).Preload(preloadSender).Preload(preloadReceiver).First(&friendRequest, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +56,7 @@ func (r *friendRequestRepository) Delete(ctx context.Context, id uint) error {
 
 func (r *friendRequestRepository) FindBySenderID(ctx context.Context, senderID uint) ([]models.FriendRequest, error) {
 	var friendRequests []models.FriendRequest
-	err := r.db.WithContext(ctx).Preload("Sender").Preload("Receiver").Where("sender_id = ?", senderID).Find(&friendRequests).Error
+	err := r.db.WithContext(ctx).Preload(preloadSender).Preload(preloadReceiver).Where("sender_id = ?", senderID).Find(&friendRequests).Error
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +65,7 @@ func (r *friendRequestRepository) FindBySenderID(ctx context.Context, senderID u
 
 func (r *friendRequestRepository) FindByReceiverID(ctx context.Context, receiverID uint) ([]models.FriendRequest, error) {
 	var friendRequests []models.FriendRequest
-	err := r.db.WithContext(ctx).Preload("Sender").Preload("Receiver").Where("receiver_id = ?", receiverID).Find(&friendRequests).Error
+	err := r.db.WithContext(ctx).Preload(preloadSender).Preload(preloadReceiver).Where("receiver_id = ?", receiverID).Find(&friendRequests).Error
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +74,7 @@ func (r *friendRequestRepository) FindByReceiverID(ctx context.Context, receiver
 
 func (r *friendRequestRepository) FindPendingByReceiverID(ctx context.Context, receiverID uint) ([]models.FriendRequest, error) {
 	var friendRequests []models.FriendRequest
-	err := r.db.WithContext(ctx).Preload("Sender").Preload("Receiver").
+	err := r.db.WithContext(ctx).Preload(preloadSender).Preload(preloadReceiver).
 		Where("receiver_id = ? AND status = ?", receiverID, models.StatusPending).
 		Find(&friendRequests).Error
 	if err != nil {
@@ -81,7 +86,6 @@ func (r *friendRequestRepository) FindPendingByReceiverID(ctx context.Context, r
 func (r *friendRequestRepository) FindFriendsByUserID(ctx context.Context, userID uint) ([]models.User, error) {
 	var friends []models.User
 
-	// Get users from accepted friend requests where the user is either sender or receiver
 	err := r.db.WithContext(ctx).Raw(`
 		SELECT DISTINCT u.* FROM users u
 		INNER JOIN friend_requests fr ON
@@ -98,7 +102,7 @@ func (r *friendRequestRepository) FindFriendsByUserID(ctx context.Context, userI
 
 func (r *friendRequestRepository) FindByUsers(ctx context.Context, userID1, userID2 uint) (*models.FriendRequest, error) {
 	var friendRequest models.FriendRequest
-	err := r.db.WithContext(ctx).Preload("Sender").Preload("Receiver").
+	err := r.db.WithContext(ctx).Preload(preloadSender).Preload(preloadReceiver).
 		Where("(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
 			userID1, userID2, userID2, userID1).
 		First(&friendRequest).Error

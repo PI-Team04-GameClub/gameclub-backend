@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// errResponseSent is a sentinel error indicating that a response has already been sent
 var errResponseSent = fmt.Errorf("response already sent")
 
 type AuthHandler struct {
@@ -28,8 +27,6 @@ func NewAuthHandlerWithRepo(userRepo repositories.UserRepository) *AuthHandler {
 	return &AuthHandler{userRepo: userRepo}
 }
 
-// Password utilities
-
 func hashPassword(password string) string {
 	hash := sha256.Sum256([]byte(password))
 	return fmt.Sprintf("%x", hash)
@@ -38,8 +35,6 @@ func hashPassword(password string) string {
 func verifyPassword(hashedPassword, password string) bool {
 	return hashPassword(password) == hashedPassword
 }
-
-// Validation helpers
 
 func validateRegisterRequest(req *dtos.RegisterRequest) error {
 	if req.Email == "" || req.Password == "" || req.FirstName == "" {
@@ -57,8 +52,6 @@ func validateLoginRequest(req *dtos.LoginRequest) error {
 	}
 	return nil
 }
-
-// Response builders
 
 func buildAuthResponse(user *models.User, token string) dtos.AuthResponse {
 	return dtos.AuthResponse{
@@ -78,8 +71,6 @@ func buildUserResponse(user *models.User) fiber.Map {
 		"email":      user.Email,
 	}
 }
-
-// Handler methods
 
 func (ah *AuthHandler) Register(c *fiber.Ctx) error {
 	req, err := ah.parseRegisterRequest(c)
@@ -129,8 +120,6 @@ func (ah *AuthHandler) GetCurrentUser(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 	return c.Status(fiber.StatusOK).JSON(buildUserResponse(user))
 }
-
-// Private helper methods
 
 func (ah *AuthHandler) parseRegisterRequest(c *fiber.Ctx) (*dtos.RegisterRequest, error) {
 	var req dtos.RegisterRequest

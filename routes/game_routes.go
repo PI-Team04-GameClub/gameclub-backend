@@ -6,11 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	gamesBasePath = "/games"
+	gamesByIDPath = gamesBasePath + "/:id"
+)
+
 func SetupGameRoutes(api fiber.Router, db *gorm.DB) {
 	gameHandler := handlers.NewGameHandler(db)
-	api.Get("/games", gameHandler.GetAllGames)
-	api.Get("/games/:id", gameHandler.GetGameByID)
-	api.Post("/games", gameHandler.CreateGame)
-	api.Put("/games/:id", gameHandler.UpdateGame)
-	api.Delete("/games/:id", gameHandler.DeleteGame)
+	api.Get(gamesBasePath, gameHandler.GetAllGames)
+	api.Get(gamesByIDPath, gameHandler.GetGameByID)
+	api.Post(gamesBasePath, gameHandler.CreateGame)
+	api.Put(gamesByIDPath, gameHandler.UpdateGame)
+	api.Delete(gamesByIDPath, gameHandler.DeleteGame)
 }

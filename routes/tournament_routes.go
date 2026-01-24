@@ -6,11 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	tournamentsBasePath = "/tournaments"
+	tournamentsByIDPath = tournamentsBasePath + "/:id"
+)
+
 func SetupTournamentRoutes(api fiber.Router, db *gorm.DB) {
 	tournamentHandler := handlers.NewTournamentHandler(db)
-	api.Get("/tournaments", tournamentHandler.GetTournaments)
-	api.Get("/tournaments/:id", tournamentHandler.GetTournamentByID)
-	api.Post("/tournaments", tournamentHandler.CreateTournament)
-	api.Put("/tournaments/:id", tournamentHandler.UpdateTournament)
-	api.Delete("/tournaments/:id", tournamentHandler.DeleteTournament)
+	api.Get(tournamentsBasePath, tournamentHandler.GetTournaments)
+	api.Get(tournamentsByIDPath, tournamentHandler.GetTournamentByID)
+	api.Post(tournamentsBasePath, tournamentHandler.CreateTournament)
+	api.Put(tournamentsByIDPath, tournamentHandler.UpdateTournament)
+	api.Delete(tournamentsByIDPath, tournamentHandler.DeleteTournament)
 }

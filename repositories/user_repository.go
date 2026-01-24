@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const userWhereIDEquals = "id = ?"
+
 type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindByID(ctx context.Context, id uint) (*models.User, error)
@@ -32,7 +34,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models
 }
 
 func (r *userRepository) FindByID(ctx context.Context, id uint) (*models.User, error) {
-	user, err := gorm.G[models.User](r.db).Where("id = ?", id).First(ctx)
+	user, err := gorm.G[models.User](r.db).Where(userWhereIDEquals, id).First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +50,6 @@ func (r *userRepository) FindAll(ctx context.Context) ([]models.User, error) {
 }
 
 func (r *userRepository) Update(ctx context.Context, user *models.User) error {
-	_, err := gorm.G[models.User](r.db).Where("id = ?", user.ID).Updates(ctx, *user)
+	_, err := gorm.G[models.User](r.db).Where(userWhereIDEquals, user.ID).Updates(ctx, *user)
 	return err
 }

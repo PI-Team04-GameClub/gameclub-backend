@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const tournamentWhereIDEquals = "id = ?"
+
 type TournamentRepository interface {
 	FindAll(ctx context.Context) ([]models.Tournament, error)
 	FindByID(ctx context.Context, id int) (*models.Tournament, error)
@@ -28,7 +30,7 @@ func (r *tournamentRepository) FindAll(ctx context.Context) ([]models.Tournament
 }
 
 func (r *tournamentRepository) FindByID(ctx context.Context, id int) (*models.Tournament, error) {
-	tournament, err := gorm.G[models.Tournament](r.db).Preload("Game", nil).Where("id = ?", id).First(ctx)
+	tournament, err := gorm.G[models.Tournament](r.db).Preload("Game", nil).Where(tournamentWhereIDEquals, id).First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +42,11 @@ func (r *tournamentRepository) Create(ctx context.Context, tournament *models.To
 }
 
 func (r *tournamentRepository) Update(ctx context.Context, tournament *models.Tournament) error {
-	_, err := gorm.G[models.Tournament](r.db).Where("id = ?", tournament.ID).Updates(ctx, *tournament)
+	_, err := gorm.G[models.Tournament](r.db).Where(tournamentWhereIDEquals, tournament.ID).Updates(ctx, *tournament)
 	return err
 }
 
 func (r *tournamentRepository) Delete(ctx context.Context, id int) error {
-	_, err := gorm.G[models.Tournament](r.db).Where("id = ?", id).Delete(ctx)
+	_, err := gorm.G[models.Tournament](r.db).Where(tournamentWhereIDEquals, id).Delete(ctx)
 	return err
 }
