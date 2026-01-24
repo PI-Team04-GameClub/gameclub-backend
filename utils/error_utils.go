@@ -27,51 +27,37 @@ func NewValidationError(field string, message string) Error {
 	return e
 }
 
-func AccessForbidden() Error {
+func newBodyError(message string) Error {
 	e := Error{}
 	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = "access forbidden"
+	e.Errors["body"] = message
 	return e
+}
+
+func AccessForbidden() Error {
+	return newBodyError("access forbidden")
 }
 
 func NotFound() Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = "resource not found"
-	return e
+	return newBodyError("resource not found")
 }
 
 func RequiresAuthentication() Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = "requested content requires authentication"
-	return e
+	return newBodyError("requested content requires authentication")
 }
 
 func BadRequest(message string) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = message
-	return e
+	return newBodyError(message)
 }
 
 func InternalServerError(message string) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = message
-	return e
+	return newBodyError(message)
 }
 
 func Conflict(message string) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = message
-	return e
+	return newBodyError(message)
 }
 
 func Unauthorized(message string) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["body"] = message
-	return e
+	return newBodyError(message)
 }
