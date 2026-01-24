@@ -6,10 +6,15 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	usersBasePath = "/users"
+	usersByIDPath = usersBasePath + "/:id"
+)
+
 func SetupUserRoutes(api fiber.Router, db *gorm.DB) {
 	userHandler := handlers.NewUserHandler(db)
-	api.Get("/users", userHandler.GetAllUsers)
-	api.Get("/users/:id", userHandler.GetUserByID)
-	api.Post("/users", userHandler.CreateUser)
-	api.Put("/users/:id", userHandler.UpdateUser)
+	api.Get(usersBasePath, userHandler.GetAllUsers)
+	api.Get(usersByIDPath, userHandler.GetUserByID)
+	api.Post(usersBasePath, userHandler.CreateUser)
+	api.Put(usersByIDPath, userHandler.UpdateUser)
 }

@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const newsWhereIDEquals = "id = ?"
+
 type NewsRepository interface {
 	FindAll(ctx context.Context) ([]models.News, error)
 	FindByID(ctx context.Context, id int) (*models.News, error)
@@ -28,7 +30,7 @@ func (r *newsRepository) FindAll(ctx context.Context) ([]models.News, error) {
 }
 
 func (r *newsRepository) FindByID(ctx context.Context, id int) (*models.News, error) {
-	news, err := gorm.G[models.News](r.db).Preload("Author", nil).Where("id = ?", id).First(ctx)
+	news, err := gorm.G[models.News](r.db).Preload("Author", nil).Where(newsWhereIDEquals, id).First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +42,11 @@ func (r *newsRepository) Create(ctx context.Context, news *models.News) error {
 }
 
 func (r *newsRepository) Update(ctx context.Context, news *models.News) error {
-	_, err := gorm.G[models.News](r.db).Where("id = ?", news.ID).Updates(ctx, *news)
+	_, err := gorm.G[models.News](r.db).Where(newsWhereIDEquals, news.ID).Updates(ctx, *news)
 	return err
 }
 
 func (r *newsRepository) Delete(ctx context.Context, id int) error {
-	_, err := gorm.G[models.News](r.db).Where("id = ?", id).Delete(ctx)
+	_, err := gorm.G[models.News](r.db).Where(newsWhereIDEquals, id).Delete(ctx)
 	return err
 }

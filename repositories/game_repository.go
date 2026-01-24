@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const gameWhereIDEquals = "id = ?"
+
 type GameRepository interface {
 	FindAll(ctx context.Context) ([]models.Game, error)
 	FindByID(ctx context.Context, id string) (*models.Game, error)
@@ -28,7 +30,7 @@ func (r *gameRepository) FindAll(ctx context.Context) ([]models.Game, error) {
 }
 
 func (r *gameRepository) FindByID(ctx context.Context, id string) (*models.Game, error) {
-	game, err := gorm.G[models.Game](r.db).Where("id = ?", id).First(ctx)
+	game, err := gorm.G[models.Game](r.db).Where(gameWhereIDEquals, id).First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +42,11 @@ func (r *gameRepository) Create(ctx context.Context, game *models.Game) error {
 }
 
 func (r *gameRepository) Update(ctx context.Context, game *models.Game) error {
-	_, err := gorm.G[models.Game](r.db).Where("id = ?", game.ID).Updates(ctx, *game)
+	_, err := gorm.G[models.Game](r.db).Where(gameWhereIDEquals, game.ID).Updates(ctx, *game)
 	return err
 }
 
 func (r *gameRepository) Delete(ctx context.Context, id uint) error {
-	_, err := gorm.G[models.Game](r.db).Where("id = ?", id).Delete(ctx)
+	_, err := gorm.G[models.Game](r.db).Where(gameWhereIDEquals, id).Delete(ctx)
 	return err
 }

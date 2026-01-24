@@ -6,13 +6,18 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	teamsBasePath = "/teams"
+	teamsByIDPath = teamsBasePath + "/:id"
+)
+
 func SetupTeamRoutes(api fiber.Router, db *gorm.DB) {
 	teamHandler := handlers.NewTeamHandler(db)
-	api.Get("/teams", teamHandler.GetAllTeams)
-	api.Get("/teams/:id", teamHandler.GetTeamByID)
-	api.Post("/teams", teamHandler.CreateTeam)
-	api.Put("/teams/:id", teamHandler.UpdateTeam)
-	api.Delete("/teams/:id", teamHandler.DeleteTeam)
-	api.Get("/teams/:id/members", teamHandler.GetTeamMembers)
-	api.Post("/teams/:id/members/:userId", teamHandler.JoinTeam)
+	api.Get(teamsBasePath, teamHandler.GetAllTeams)
+	api.Get(teamsByIDPath, teamHandler.GetTeamByID)
+	api.Post(teamsBasePath, teamHandler.CreateTeam)
+	api.Put(teamsByIDPath, teamHandler.UpdateTeam)
+	api.Delete(teamsByIDPath, teamHandler.DeleteTeam)
+	api.Get(teamsByIDPath+"/members", teamHandler.GetTeamMembers)
+	api.Post(teamsByIDPath+"/members/:userId", teamHandler.JoinTeam)
 }
