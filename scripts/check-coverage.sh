@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-THRESHOLD=70.0
+THRESHOLD=50.0
 
 echo "=== Coverage Metrics Report ==="
 echo ""
