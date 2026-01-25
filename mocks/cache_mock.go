@@ -1,0 +1,32 @@
+package mocks
+
+import (
+	"context"
+	"time"
+
+	"github.com/stretchr/testify/mock"
+)
+
+type MockCache struct {
+	mock.Mock
+}
+
+func (m *MockCache) Get(ctx context.Context, key string, dest interface{}) error {
+	args := m.Called(ctx, key, dest)
+	return args.Error(0)
+}
+
+func (m *MockCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	args := m.Called(ctx, key, value, ttl)
+	return args.Error(0)
+}
+
+func (m *MockCache) Delete(ctx context.Context, keys ...string) error {
+	args := m.Called(ctx, keys)
+	return args.Error(0)
+}
+
+func (m *MockCache) DeleteByPattern(ctx context.Context, pattern string) error {
+	args := m.Called(ctx, pattern)
+	return args.Error(0)
+}
