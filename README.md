@@ -31,13 +31,15 @@ gameclub-backend
 ├── mocks
 ├── models
 ├── observer
+├── redis
 ├── repositories
 ├── routes
 ├── security
-└── strategy
-    ├── christmas
-    ├── normal
-    └── summer
+├── strategy
+│   ├── christmas
+│   ├── normal
+│   └── summer
+└── utils
 ```
 
 ## Getting Started
