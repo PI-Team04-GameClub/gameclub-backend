@@ -9,6 +9,7 @@
     "golang",
     "oldhash",
     "dtos",
+    "goredis",
     "mappers",
     "repos",
     "middlewares",
