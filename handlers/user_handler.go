@@ -53,36 +53,6 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	return c.JSON(mappers.ToUserResponse(user))
 }
 
-func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	var req dtos.CreateUserRequest
-
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Invalid request body"))
-	}
-
-	if req.Email == "" || req.Password == "" || req.FirstName == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Email, password, and first name are required"))
-	}
-
-	if len(req.Password) < 6 {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.BadRequest("Password must be at least 6 characters"))
-	}
-
-	existingUser, _ := h.userRepo.FindByEmail(c.Context(), req.Email)
-	if existingUser != nil {
-		return c.Status(fiber.StatusConflict).JSON(utils.Conflict("Email already registered"))
-	}
-
-	user := mappers.ToUserModel(req)
-	user.Password = hashUserPassword(req.Password)
-
-	if err := h.userRepo.Create(c.Context(), &user); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(utils.InternalServerError("Failed to create user"))
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(mappers.ToUserResponse(&user))
-}
-
 func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
