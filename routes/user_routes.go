@@ -15,6 +15,5 @@ func SetupUserRoutes(api fiber.Router, db *gorm.DB) {
 	userHandler := handlers.NewUserHandler(db)
 	api.Get(usersBasePath, userHandler.GetAllUsers)
 	api.Get(usersByIDPath, userHandler.GetUserByID)
-	api.Post(usersBasePath, userHandler.CreateUser)
 	api.Put(usersByIDPath, userHandler.UpdateUser)
 }

@@ -14,15 +14,6 @@ func ToUserResponse(user *models.User) dtos.UserResponse {
 	}
 }
 
-func ToUserModel(req dtos.CreateUserRequest) models.User {
-	return models.User{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		Password:  req.Password,
-	}
-}
-
 func ToUserResponseList(users []models.User) []dtos.UserResponse {
 	responses := make([]dtos.UserResponse, len(users))
 	for i, user := range users {
